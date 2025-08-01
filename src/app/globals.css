@@ -61,3 +61,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+    .glow-effect {
+        @apply transition-all duration-300;
+    }
+    .glow-effect:hover {
+        box-shadow: 0 0 15px hsl(var(--primary) / 0.5), 0 0 5px hsl(var(--primary) / 0.4);
+    }
+    .card-glow-effect {
+        @apply transition-all duration-300;
+    }
+     .card-glow-effect:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px hsl(var(--primary) / 0.15);
+    }
+}
