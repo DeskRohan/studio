@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle, Target, Flame, Quote, User } from "lucide-react";
+import { CheckCircle, Target, Flame, Quote, BellDot, BellOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { motivationalQuotes } from "@/lib/quotes";
@@ -26,6 +28,7 @@ export default function DashboardPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [quote, setQuote] = useState("");
+  const [notifications, setNotifications] = useState(false);
 
   useEffect(() => {
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
@@ -49,11 +52,36 @@ export default function DashboardPage() {
         }
     });
 
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setNotifications(true);
+      }
+    }
+
     return () => {
       unsubRoadmap();
       unsubStreak();
     };
   }, []);
+
+  const handleNotificationToggle = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+        return;
+    }
+    if (!notifications) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            setNotifications(true);
+            new Notification("Notifications Enabled!", {
+                body: "Great! We'll send you daily reminders.",
+                icon: "/favicon.ico"
+            });
+        }
+    } else {
+        setNotifications(false);
+    }
+  }
+
 
   const remainingCount = totalCount - completedCount;
   const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
@@ -61,9 +89,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Rohan's Dashboard</h1>
-        <p className="text-muted-foreground">An overview of your progress.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Rohan's Dashboard</h1>
+          <p className="text-muted-foreground">An overview of your progress.</p>
+        </div>
+         <div className="flex items-center space-x-2">
+            {notifications ? <BellDot className="text-accent" /> : <BellOff className="text-muted-foreground"/> }
+            <Label htmlFor="notification-switch">Daily Reminders</Label>
+            <Switch id="notification-switch" checked={notifications} onCheckedChange={handleNotificationToggle} />
+        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

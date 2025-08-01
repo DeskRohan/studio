@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Pie, PieChart, ResponsiveContainer, Cell } from "recharts";
+import { Pie, PieChart, ResponsiveContainer, Cell, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -53,8 +53,8 @@ export function OverviewChart({ completed, remaining }: { completed: number; rem
               strokeWidth={2}
               paddingAngle={4}
             >
-                <Cell key={`cell-0`} fill={chartConfig.completed.color} />
-                <Cell key={`cell-1`} fill={chartConfig.remaining.color} />
+                <Cell key={`cell-0`} fill={"hsl(var(--chart-1))"} />
+                <Cell key={`cell-1`} fill={"hsl(var(--chart-2))"} />
             </Pie>
              {total > 0 && (
                 <text
