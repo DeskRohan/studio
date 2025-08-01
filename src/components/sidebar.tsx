@@ -9,11 +9,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { BookOpen, GraduationCap, LayoutDashboard } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutDashboard, MessageSquare } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
+  { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
 ];
 
 export function Sidebar() {
@@ -37,7 +38,7 @@ export function Sidebar() {
                   href={item.href}
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                    (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))) && "bg-accent text-accent-foreground"
+                    (pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))) && "bg-accent text-accent-foreground"
                   )}
                 >
                   <item.icon className="h-5 w-5" />

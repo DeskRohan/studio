@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut, User } from "lucide-react";
+import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut, User, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
+    { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
 ];
 
 export function Header() {

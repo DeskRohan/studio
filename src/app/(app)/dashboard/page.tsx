@@ -106,7 +106,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <OverviewChart />
+      <OverviewChart completed={completedCount} remaining={remainingCount} />
     </div>
   );
 }
