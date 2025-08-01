@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, Target, Flame, Quote } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [quote, setQuote] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
@@ -41,6 +43,7 @@ export default function DashboardPage() {
         setCompletedCount(topicItems.filter(item => item.completed).length);
         setTotalCount(topicItems.length);
       }
+      setIsLoading(false);
     });
 
     const unsubStreak = onSnapshot(streakDocRef, (doc) => {
@@ -66,47 +69,58 @@ export default function DashboardPage() {
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="card-glow-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Topics Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedCount}</div>
-            <p className="text-xs text-muted-foreground">out of {totalCount} total topics</p>
-          </CardContent>
-        </Card>
-        <Card className="card-glow-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Topics Remaining</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{remainingCount}</div>
-            <p className="text-xs text-muted-foreground">Keep going!</p>
-          </CardContent>
-        </Card>
-        <Card className="card-glow-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
-            <Flame className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{streak}</div>
-            <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
-          </CardContent>
-        </Card>
-         <Card className="card-glow-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Quote</CardTitle>
-             <Quote className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{quote}</p>
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          <>
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </>
+        ) : (
+          <>
+            <Card className="card-glow-effect">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Topics Completed</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{completedCount}</div>
+                <p className="text-xs text-muted-foreground">out of {totalCount} total topics</p>
+              </CardContent>
+            </Card>
+            <Card className="card-glow-effect">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Topics Remaining</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{remainingCount}</div>
+                <p className="text-xs text-muted-foreground">Keep going!</p>
+              </CardContent>
+            </Card>
+            <Card className="card-glow-effect">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
+                <Flame className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{streak}</div>
+                <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
+              </CardContent>
+            </Card>
+            <Card className="card-glow-effect">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Daily Quote</CardTitle>
+                <Quote className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">{quote}</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
-      <OverviewChart completed={completedCount} remaining={remainingCount} />
+      {isLoading ? <Skeleton className="h-96" /> : <OverviewChart completed={completedCount} remaining={remainingCount} />}
     </div>
   );
 }

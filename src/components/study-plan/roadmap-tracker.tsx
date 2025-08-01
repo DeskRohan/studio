@@ -100,17 +100,23 @@ export function RoadmapTracker() {
     }
     
     let newStreakCount = 1;
+    let toastMessage = "You've started a new streak! 🔥";
     if (streakData.lastCompletedDate) {
         const lastDate = new Date(streakData.lastCompletedDate);
         const yesterday = subDays(today, 1);
         if (format(lastDate, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
             newStreakCount = streakData.count + 1;
+            toastMessage = `Streak extended to ${newStreakCount} days! Keep it up! 🎉`;
         }
     }
     
     const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
     setStreakData(newStreakData);
     await setDoc(streakDocRef, newStreakData);
+    toast({
+        title: "Progress!",
+        description: toastMessage,
+    });
   }
 
   const handleToggleComplete = async (id: number) => {
