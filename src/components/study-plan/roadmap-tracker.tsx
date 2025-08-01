@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -185,8 +186,8 @@ export function RoadmapTracker() {
   return (
     <Card className="min-h-full">
       <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
+        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+            <div className="flex-1">
                 <CardTitle>Your Progress Tracker</CardTitle>
                 <CardDescription>
                   Check off items as you complete them. Your progress is saved automatically.
@@ -194,7 +195,7 @@ export function RoadmapTracker() {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Reset Progress</Button>
+                <Button variant="destructive" className="w-full md:w-auto">Reset Progress</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -234,7 +235,7 @@ export function RoadmapTracker() {
                                 checked={item.completed}
                                 onCheckedChange={() => handleToggleComplete(item.id)}
                             />
-                            <Label htmlFor={`item-${item.id}`} className={`flex-1 cursor-pointer ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
+                            <Label htmlFor={`item-${item.id}`} className={`flex-1 cursor-pointer text-sm md:text-base ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
                                 {item.text}
                             </Label>
                         </div>
@@ -258,3 +259,4 @@ export function RoadmapTracker() {
     </Card>
   );
 }
+
