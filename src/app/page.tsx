@@ -42,7 +42,7 @@ export default function PasscodePage() {
         <header className="flex h-16 items-center justify-between px-4 md:px-8 border-b">
              <div className="flex items-center gap-2 text-lg font-bold text-primary">
                 <GraduationCap className="h-6 w-6" />
-                <span>Placement Prep Pro</span>
+                <span>NextGenSDE</span>
             </div>
             <ThemeToggle/>
         </header>

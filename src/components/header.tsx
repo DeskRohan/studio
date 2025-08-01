@@ -36,7 +36,7 @@ export function Header() {
         <div className="mr-4 flex">
           <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-bold">Placement Prep Pro</span>
+            <span className="font-bold">NextGenSDE</span>
           </Link>
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
              {navItems.map((item) => (
@@ -62,7 +62,7 @@ export function Header() {
                  </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Rohan's Account</DropdownMenuLabel>
+                <DropdownMenuLabel>Rohan Godakhindi (CEO & Founder)</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
