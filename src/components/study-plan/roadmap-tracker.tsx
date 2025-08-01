@@ -63,22 +63,16 @@ export function RoadmapTracker() {
     const streakDocRef = getStreakDocRef();
 
     const initializeData = async () => {
-      try {
-        const docSnap = await getDoc(roadmapDocRef);
-        if (!docSnap.exists()) {
-          // Only create the document if it truly doesn't exist
-          await setDoc(roadmapDocRef, { items: defaultRoadmap });
-          setRoadmapItems(defaultRoadmap);
-        }
-      } catch (error) {
-        console.error("Error initializing roadmap:", error);
-        toast({ title: "Error", description: "Could not initialize roadmap data.", variant: "destructive" });
-      }
-
-      // Now, set up the real-time listener
+      // First, set up the real-time listener to get live updates
       const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
         if (docSnap.exists()) {
             setRoadmapItems(docSnap.data().items as RoadmapItem[]);
+        } else {
+            // If the document doesn't exist after the initial check, create it.
+            // This is safer than checking before listening.
+            console.log("Roadmap not found, creating a new one.");
+            setDoc(roadmapDocRef, { items: defaultRoadmap });
+            setRoadmapItems(defaultRoadmap);
         }
         setIsLoading(false);
       }, (error) => {
