@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
+import { Separator } from "./ui/separator";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -54,6 +55,10 @@ export function Header() {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
+            <div className="hidden md:flex items-center gap-4">
+              <Separator orientation="vertical" className="h-6"/>
+              <span className="font-semibold text-sm text-muted-foreground">Rohan Godakhindi (CEO & Founder)</span>
+            </div>
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -62,7 +67,7 @@ export function Header() {
                  </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Rohan Godakhindi (CEO & Founder)</DropdownMenuLabel>
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
