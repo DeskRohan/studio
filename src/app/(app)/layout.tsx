@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
 
 export default function AppLayout({
   children,
@@ -24,6 +25,7 @@ export default function AppLayout({
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         {children}
       </main>
+      <Footer />
     </div>
   );
 }
