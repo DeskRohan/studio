@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Linkedin, Instagram, Github } from "lucide-react";
+import { Linkedin, Instagram, Github, User } from "lucide-react";
 import Link from "next/link";
 
 export default function ArchitectPage() {
@@ -18,8 +18,9 @@ export default function ArchitectPage() {
       <Card className="w-full max-w-2xl card-glow-effect">
         <CardHeader className="items-center text-center">
             <Avatar className="h-24 w-24 mb-4">
-                 <AvatarImage src="https://github.com/rohan-godakhindi.png" alt="@rohan-godakhindi" />
-                <AvatarFallback>RG</AvatarFallback>
+                <AvatarFallback>
+                    <User className="h-12 w-12" />
+                </AvatarFallback>
             </Avatar>
           <CardTitle className="text-2xl">Rohan Godakhindi</CardTitle>
           <CardDescription className="text-primary font-semibold">CEO & Founder</CardDescription>
