@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const chartData = [
   { subject: "Arrays", score: 85, target: 90 },
@@ -14,6 +14,17 @@ const chartData = [
   { subject: "System Design", score: 75, target: 85 },
 ];
 
+const chartConfig = {
+  score: {
+    label: "Your Score",
+    color: "hsl(var(--primary))",
+  },
+  target: {
+    label: "Target",
+    color: "hsl(var(--secondary))",
+  },
+};
+
 export function OverviewChart() {
   return (
     <Card className="col-span-1 lg:col-span-2">
@@ -22,32 +33,34 @@ export function OverviewChart() {
         <CardDescription>Your scores vs. target scores across key topics.</CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="subject"
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip
-                cursor={{ fill: 'hsl(var(--muted))' }}
-                content={<ChartTooltipContent indicator="dot" />}
-             />
-            <Legend />
-            <Bar dataKey="target" fill="hsl(var(--secondary))" name="Target" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="score" fill="hsl(var(--primary))" name="Your Score" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <ChartContainer config={chartConfig} className="min-h-[350px] w-full">
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="subject"
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <ChartTooltip
+                  cursor={{ fill: 'hsl(var(--muted))' }}
+                  content={<ChartTooltipContent indicator="dot" />}
+               />
+              <Legend />
+              <Bar dataKey="target" fill="var(--color-target)" name="Target" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="score" fill="var(--color-score)" name="Your Score" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
