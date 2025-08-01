@@ -1,6 +1,5 @@
 'use client';
 
-import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,16 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut, User, MessageSquare } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
+import { SidebarTrigger } from "./ui/sidebar";
 
-const navItems = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
-    { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
-];
 
 export function Header() {
   const router = useRouter();
@@ -31,35 +25,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-       <Sheet>
-          <SheetTrigger asChild>
-            <Button size="icon" variant="outline" className="sm:hidden">
-              <PanelLeft className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs">
-            <nav className="grid gap-6 text-lg font-medium">
-              <Link
-                href="/dashboard"
-                className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
-              >
-                <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />
-                <span className="sr-only">Placement Prep Pro</span>
-              </Link>
-              {navItems.map(item => (
-                <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                </Link>
-              ))}
-            </nav>
-          </SheetContent>
-        </Sheet>
+      <SidebarTrigger className="sm:hidden" />
       <div className="flex-1">
       </div>
       <ThemeToggle />

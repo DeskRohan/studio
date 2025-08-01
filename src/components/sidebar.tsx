@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { BookOpen, GraduationCap, LayoutDashboard, MessageSquare } from "lucide-react";
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -17,39 +21,42 @@ const navItems = [
   { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
 ];
 
-export function Sidebar() {
+export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-card sm:flex">
-      <nav className="flex flex-col items-center gap-4 px-2 py-4">
-        <Link
-          href="/dashboard"
-          className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-        >
-          <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />
-          <span className="sr-only">Placement Prep Pro</span>
-        </Link>
-        <TooltipProvider>
-          {navItems.map((item) => (
-            <Tooltip key={item.href}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                    (pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))) && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="sr-only">{item.label}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.label}</TooltipContent>
-            </Tooltip>
-          ))}
-        </TooltipProvider>
-      </nav>
-    </aside>
+    <Sidebar collapsible="icon">
+        <SidebarHeader>
+            <div className="flex items-center gap-2">
+                 <Button asChild variant="ghost" size="icon" className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base">
+                    <Link href="/dashboard">
+                        <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />
+                    </Link>
+                </Button>
+                <span className="text-lg font-semibold">Prep Pro</span>
+            </div>
+        </SidebarHeader>
+        <SidebarContent>
+            <SidebarMenu>
+                 {navItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                         <SidebarMenuButton
+                            asChild
+                            isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
+                            tooltip={item.label}
+                        >
+                            <Link href={item.href}>
+                                <item.icon />
+                                <span>{item.label}</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+        </SidebarContent>
+         <SidebarFooter>
+            <SidebarTrigger />
+        </SidebarFooter>
+    </Sidebar>
   );
 }
