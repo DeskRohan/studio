@@ -62,31 +62,49 @@ export function RoadmapTracker() {
     const roadmapDocRef = getRoadmapDocRef();
     const streakDocRef = getStreakDocRef();
 
-    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
+    const initializeData = async () => {
+      try {
+        const docSnap = await getDoc(roadmapDocRef);
+        if (!docSnap.exists()) {
+          // Only create the document if it truly doesn't exist
+          await setDoc(roadmapDocRef, { items: defaultRoadmap });
+          setRoadmapItems(defaultRoadmap);
+        }
+      } catch (error) {
+        console.error("Error initializing roadmap:", error);
+        toast({ title: "Error", description: "Could not initialize roadmap data.", variant: "destructive" });
+      }
+
+      // Now, set up the real-time listener
+      const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
         if (docSnap.exists()) {
             setRoadmapItems(docSnap.data().items as RoadmapItem[]);
-        } else {
-            setDoc(roadmapDocRef, { items: defaultRoadmap });
-            setRoadmapItems(defaultRoadmap);
         }
         setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching roadmap:", error);
-        toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
-        setIsLoading(false);
-    });
-    
-    const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            setStreakData(docSnap.data() as StreakData);
-        } else {
-            setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
-        }
-    });
+      }, (error) => {
+          console.error("Error fetching roadmap:", error);
+          toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
+          setIsLoading(false);
+      });
+      
+      const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+              setStreakData(docSnap.data() as StreakData);
+          } else {
+              setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
+          }
+      });
 
-    return () => {
+      return () => {
         unsubscribeRoadmap();
         unsubscribeStreak();
+      }
+    }
+
+    const unsubPromise = initializeData();
+
+    return () => {
+        unsubPromise.then(unsub => unsub && unsub());
     }
   }, [getRoadmapDocRef, getStreakDocRef, toast]);
 
@@ -151,16 +169,18 @@ export function RoadmapTracker() {
 
   const handleResetProgress = async () => {
     const docRef = getRoadmapDocRef();
-    if (!docRef) return;
+    const streakDocRef = getStreakDocRef();
+    if (!docRef || !streakDocRef) return;
 
     const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
     setRoadmapItems(newItems);
 
     try {
         await setDoc(docRef, { items: newItems });
+        await setDoc(streakDocRef, { count: 0, lastCompletedDate: ""});
         toast({
             title: "Progress Reset",
-            description: "Your roadmap progress has been successfully reset.",
+            description: "Your roadmap progress and streak have been successfully reset.",
         })
     } catch(error) {
         toast({
@@ -201,7 +221,7 @@ export function RoadmapTracker() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently reset your roadmap progress.
+                    This action cannot be undone. This will permanently reset your roadmap progress and streak.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -259,4 +279,3 @@ export function RoadmapTracker() {
     </Card>
   );
 }
-
