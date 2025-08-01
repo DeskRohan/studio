@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ListChecks, Target, Flame, GitCommitHorizontal, CheckCircle } from "lucide-react";
+import { CheckCircle, Target, Flame, Quote, User } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { motivationalQuotes } from "@/lib/quotes";
@@ -56,11 +56,13 @@ export default function DashboardPage() {
   }, []);
 
   const remainingCount = totalCount - completedCount;
+  const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Rohan's Dashboard</h1>
         <p className="text-muted-foreground">An overview of your progress.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -97,7 +99,7 @@ export default function DashboardPage() {
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Daily Quote</CardTitle>
-             <GitCommitHorizontal className="h-4 w-4 text-muted-foreground" />
+             <Quote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-sm">{quote}</p>

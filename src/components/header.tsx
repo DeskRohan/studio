@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut } from "lucide-react";
+import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -64,14 +64,17 @@ export function Header() {
       <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-           <Button variant="ghost" size="icon" className="text-muted-foreground">
-             <LogOut />
+           <Button variant="ghost" size="icon" className="rounded-full">
+            <User className="h-5 w-5" />
            </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuLabel>Rohan's Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+            </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

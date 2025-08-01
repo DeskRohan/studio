@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useState, useEffect } from "react";
@@ -28,7 +28,7 @@ const chartConfig = {
   },
   target: {
     label: "Target",
-    color: "hsl(var(--secondary))",
+    color: "hsl(var(--muted))",
   },
 };
 
@@ -72,26 +72,26 @@ export function OverviewChart() {
   }, []);
 
   return (
-    <Card className="col-span-1 lg:col-span-2">
+    <Card className="col-span-1 lg:col-span-3">
       <CardHeader>
         <CardTitle>Progress Overview</CardTitle>
         <CardDescription>Your completion progress across roadmap phases.</CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
         <ChartContainer config={chartConfig} className="min-h-[350px] w-full">
-            <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
+            <BarChart data={chartData} margin={{ top: 20, right: 30, bottom: 40, left: 0 }} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <YAxis
                 dataKey="subject"
+                type="category"
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                angle={-45}
-                textAnchor="end"
-                height={60}
+                width={120}
               />
-              <YAxis
+              <XAxis
+                type="number"
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 tickLine={false}
@@ -99,12 +99,12 @@ export function OverviewChart() {
                 tickFormatter={(value) => `${value}%`}
               />
               <ChartTooltip
-                  cursor={{ fill: 'hsl(var(--muted))' }}
+                  cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
                   content={<ChartTooltipContent indicator="dot" />}
                />
-              <Legend />
-              <Bar dataKey="target" fill="var(--color-target)" name="Target" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="score" fill="var(--color-score)" name="Your Score" radius={[4, 4, 0, 0]} />
+              <Legend verticalAlign="top" height={36} />
+              <Bar dataKey="target" stackId="a" fill="var(--color-target)" name="Remaining" radius={[4, 4, 4, 4]} barSize={30} />
+              <Bar dataKey="score" stackId="a" fill="var(--color-score)" name="Completed" radius={[4, 4, 4, 4]} barSize={30} />
             </BarChart>
         </ChartContainer>
       </CardContent>
