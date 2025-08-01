@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Home, BookOpen, PanelLeft, LogOut } from "lucide-react";
+import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const navItems = [
+    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
 ];
 
@@ -38,7 +39,7 @@ export function Header() {
           <SheetContent side="left" className="sm:max-w-xs">
             <nav className="grid gap-6 text-lg font-medium">
               <Link
-                href="/study-plan"
+                href="/dashboard"
                 className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
               >
                 <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />

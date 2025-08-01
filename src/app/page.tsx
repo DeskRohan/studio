@@ -25,7 +25,7 @@ export default function PasscodePage() {
     setTimeout(() => {
         if (passcode === CORRECT_PASSCODE) {
             sessionStorage.setItem('authenticated', 'true');
-            router.push('/study-plan');
+            router.push('/dashboard');
         } else {
             toast({
                 title: 'Incorrect Passcode',
