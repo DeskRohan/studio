@@ -1,12 +1,6 @@
-// src/components/header.tsx
 'use client';
 
 import Link from "next/link";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,22 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Home, BookOpen, PanelLeft } from "lucide-react";
-import { useAuth } from "@/context/auth-context";
+import { GraduationCap, Home, BookOpen, PanelLeft, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const navItems = [
-    { href: "/", icon: Home, label: "Dashboard" },
-    { href: "/study-plan", icon: BookOpen, label: "Study Plan" },
-  ];
+    { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
+];
 
 export function Header() {
-  const { user, logout } = useAuth();
   const router = useRouter();
 
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
+  const handleLogout = () => {
+    sessionStorage.removeItem('authenticated');
+    router.push('/');
   };
 
   return (
@@ -47,7 +38,7 @@ export function Header() {
           <SheetContent side="left" className="sm:max-w-xs">
             <nav className="grid gap-6 text-lg font-medium">
               <Link
-                href="/"
+                href="/study-plan"
                 className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
               >
                 <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />
@@ -67,23 +58,15 @@ export function Header() {
           </SheetContent>
         </Sheet>
       <div className="flex-1">
-        {/* Can add breadcrumbs here if needed */}
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="overflow-hidden rounded-full"
-          >
-            <Avatar>
-              <AvatarImage src={user?.photoURL || "https://placehold.co/32x32"} alt="User avatar" />
-              <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
-          </Button>
+           <Button variant="ghost" size="icon" className="text-muted-foreground">
+             <LogOut />
+           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
+          <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
         </DropdownMenuContent>

@@ -1,34 +1,23 @@
-// src/app/(app)/layout.tsx
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
 import { Header } from '@/components/header';
 import { Sidebar } from '@/components/sidebar';
-import { Loader2 } from 'lucide-react';
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    const isAuthenticated = sessionStorage.getItem('authenticated');
+    if (isAuthenticated !== 'true') {
+      router.push('/');
     }
-  }, [user, loading, router]);
-
-  if (loading || !user) {
-    return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  }, [router]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
