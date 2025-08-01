@@ -44,22 +44,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-8">
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
-                <GraduationCap className="h-6 w-6 text-primary" />
-                <span className="sr-only">NextGenSDE</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="flex items-center gap-2">
-                <Crown className="h-4 w-4 text-yellow-400" />
-                <p>Rohan Godakhindi (CEO & Founder)</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
+            <GraduationCap className="h-6 w-6 text-primary" />
+        </Link>
         <Link href="/dashboard" className="text-xl font-bold text-primary">
           NextGenSDE
         </Link>
@@ -116,7 +103,10 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+             <DropdownMenuLabel className="flex flex-col">
+                <span className="font-bold">Rohan Godakhindi</span>
+                <span className="text-xs font-normal text-muted-foreground">CEO & Founder</span>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
