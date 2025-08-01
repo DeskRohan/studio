@@ -10,11 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
-import { Separator } from "./ui/separator";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -35,10 +40,19 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-card">
       <div className="container flex h-16 items-center">
         <div className="mr-4 flex">
-          <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-bold">NextGenSDE</span>
-          </Link>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
+                  <GraduationCap className="h-6 w-6 text-primary" />
+                  <span className="font-bold">NextGenSDE</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Rohan Godakhindi (CEO & Founder)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
              {navItems.map((item) => (
               <Link
@@ -55,10 +69,6 @@ export function Header() {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-            <div className="hidden md:flex items-center gap-4">
-              <Separator orientation="vertical" className="h-6"/>
-              <span className="font-semibold text-sm text-muted-foreground">Rohan Godakhindi (CEO & Founder)</span>
-            </div>
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
