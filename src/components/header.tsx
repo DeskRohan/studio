@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GraduationCap, LayoutDashboard, BookOpen, PanelLeft, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -60,6 +61,7 @@ export function Header() {
         </Sheet>
       <div className="flex-1">
       </div>
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
            <Button variant="ghost" size="icon" className="text-muted-foreground">

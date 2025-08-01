@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Responsive
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const ROADMAP_DOC_ID = "dsa-roadmap-main";
@@ -36,10 +36,9 @@ export function OverviewChart() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
 
   useEffect(() => {
-    const fetchRoadmapData = async () => {
-      const docRef = doc(db, "roadmaps", ROADMAP_DOC_ID);
-      const docSnap = await getDoc(docRef);
-
+    const docRef = doc(db, "roadmaps", ROADMAP_DOC_ID);
+    
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const items = docSnap.data().items as RoadmapItem[];
         const phaseData: { [key: string]: { completed: number; total: number } } = {};
@@ -52,7 +51,7 @@ export function OverviewChart() {
             if (!phaseData[currentPhase]) {
               phaseData[currentPhase] = { completed: 0, total: 0 };
             }
-          } else if (currentPhase) {
+          } else if (currentPhase && !item.text.startsWith('#')) {
             phaseData[currentPhase].total++;
             if (item.completed) {
               phaseData[currentPhase].completed++;
@@ -62,18 +61,14 @@ export function OverviewChart() {
 
         const formattedChartData = Object.keys(phaseData).map(phase => ({
           subject: phase,
-          score: (phaseData[phase].completed / phaseData[phase].total) * 100,
+          score: (phaseData[phase].total > 0) ? (phaseData[phase].completed / phaseData[phase].total) * 100 : 0,
           target: 100,
         }));
         setChartData(formattedChartData);
       }
-    };
+    });
 
-    fetchRoadmapData();
-    
-    // Set up a listener for real-time updates if needed, e.g., using onSnapshot
-    // For this case, fetching once on mount is sufficient as progress is on another page.
-
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -84,17 +79,20 @@ export function OverviewChart() {
       </CardHeader>
       <CardContent className="pl-2">
         <ChartContainer config={chartConfig} className="min-h-[350px] w-full">
-            <BarChart data={chartData}>
+            <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="subject"
-                stroke="#888888"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
+                angle={-45}
+                textAnchor="end"
+                height={60}
               />
               <YAxis
-                stroke="#888888"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
