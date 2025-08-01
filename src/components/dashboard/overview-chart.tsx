@@ -12,15 +12,13 @@ import {
 const chartConfig = {
   completed: {
     label: "Completed",
-    color: "hsl(var(--primary))",
+    color: "hsl(var(--chart-1))",
   },
   remaining: {
     label: "Remaining",
     color: "hsl(var(--muted))",
   },
 };
-
-const COLORS = [chartConfig.completed.color, chartConfig.remaining.color];
 
 export function OverviewChart({ completed, remaining }: { completed: number; remaining: number }) {
     const chartData = [
