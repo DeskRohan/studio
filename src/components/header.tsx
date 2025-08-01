@@ -1,3 +1,6 @@
+// src/components/header.tsx
+'use client';
+
 import Link from "next/link";
 import {
   Avatar,
@@ -14,16 +17,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Home, BookOpen, Laptop, BarChart, PanelLeft } from "lucide-react";
+import { GraduationCap, Home, BookOpen, PanelLeft } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from "next/navigation";
 
 const navItems = [
     { href: "/", icon: Home, label: "Dashboard" },
     { href: "/study-plan", icon: BookOpen, label: "Study Plan" },
-    { href: "/practice", icon: Laptop, label: "Practice" },
-    { href: "/exams", icon: BarChart, label: "Exams" },
   ];
 
 export function Header() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
        <Sheet>
@@ -66,18 +77,15 @@ export function Header() {
             className="overflow-hidden rounded-full"
           >
             <Avatar>
-              <AvatarImage src="https://placehold.co/32x32" alt="User avatar" />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarImage src={user?.photoURL || "https://placehold.co/32x32"} alt="User avatar" />
+              <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Settings</DropdownMenuItem>
-          <DropdownMenuItem>Support</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Logout</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
