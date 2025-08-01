@@ -103,10 +103,7 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-             <DropdownMenuLabel className="flex flex-col">
-                <span className="font-bold">Rohan Godakhindi</span>
-                <span className="text-xs font-normal text-muted-foreground">CEO & Founder</span>
-            </DropdownMenuLabel>
+             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />

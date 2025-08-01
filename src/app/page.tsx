@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck } from 'lucide-react';
+import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, User, Crown } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const CORRECT_PASSCODE = '218701';
@@ -73,8 +73,12 @@ export default function PasscodePage() {
                             <span>Progress Tracking</span>
                         </div>
                     </div>
+                     <div className="flex items-center gap-2 pt-4 text-sm text-muted-foreground">
+                        <Crown className="h-5 w-5 text-amber-400" />
+                        <span>Created by Rohan Godakhindi</span>
+                    </div>
                   </div>
-                  <Card className="w-full max-w-sm mx-auto">
+                  <Card className="w-full max-w-sm mx-auto card-glow-effect">
                     <CardHeader>
                       <CardTitle className="text-2xl">Enter Passcode</CardTitle>
                       <CardDescription>
