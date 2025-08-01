@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,12 +16,6 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Crown } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
@@ -36,11 +31,17 @@ const navItems = [
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleLogout = () => {
     sessionStorage.removeItem('authenticated');
     router.push('/');
   };
+
+  const handleLinkClick = (href: string) => {
+    router.push(href);
+    setIsSheetOpen(false);
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-8">
@@ -64,7 +65,7 @@ export function Header() {
           </Link>
         ))}
       </nav>
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="shrink-0 md:hidden">
             <Menu className="h-5 w-5" />
@@ -73,7 +74,7 @@ export function Header() {
         </SheetTrigger>
         <SheetContent side="left">
           <nav className="grid gap-6 text-lg font-medium">
-            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold">
+            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold" onClick={() => handleLinkClick('/dashboard')}>
               <GraduationCap className="h-6 w-6 text-primary" />
               <span>NextGenSDE</span>
             </Link>
@@ -81,6 +82,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => handleLinkClick(item.href)}
                 className={cn(
                   "hover:text-foreground",
                    pathname === item.href ? "text-foreground" : "text-muted-foreground"
