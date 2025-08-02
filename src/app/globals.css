@@ -29,9 +29,9 @@
   }
  
   .dark {
-    --background: 222 47% 11%; /* #0A192F - Deep Space Blue */
+    --background: 222 47% 11% / 0; /* Transparent to show starfield */
     --foreground: 210 40% 98%;
-    --card: 222 47% 15%; /* #112240 - Slightly lighter */
+    --card: 222 47% 11%; /* #0A192F - Deep Space Blue (Solid) */
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
@@ -62,12 +62,13 @@
   }
 }
 
-.dark .star-field {
+.star-field {
   position: fixed;
   left: 0;
   top: 0;
   width: 100%;
   height: 2000px; /* Taller than viewport to allow for vertical movement */
+  background: hsl(222 47% 11%); /* Solid fallback */
   background-image: 
     radial-gradient(1px 1px at 10% 20%, white, rgba(255,255,255,0)),
     radial-gradient(1px 1px at 80% 30%, white, rgba(255,255,255,0)),

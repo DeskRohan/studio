@@ -25,14 +25,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head />
-      <body className={cn("font-body antialiased h-full bg-background")}>
+      <body>
+        <div className="star-field"></div>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="star-field"></div>
           {children}
           <Toaster />
         </ThemeProvider>
