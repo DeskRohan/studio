@@ -16,7 +16,7 @@ const resources = {
   ],
   aptitude: [
       { title: "Indiabix", url: "https://www.indiabix.com/", icon: Laptop, description: "A vast collection of aptitude questions and mock tests for practice." },
-      { title: "Freshersworld", url: "https://www.freshersworld.com/placement-papers/aptitude-questions-and-answers", icon: Laptop, description: "Practice aptitude questions and see answers with explanations." },
+      { title: "GeeksforGeeks Aptitude", url: "https://www.geeksforgeeks.org/aptitude-questions-and-answers/", icon: Laptop, description: "A comprehensive platform with a wide range of aptitude questions and detailed solutions." },
   ],
   projects: [
       { title: "freeCodeCamp Projects", url: "https://www.freecodecamp.org/learn/", icon: Rocket, description: "Build real-world projects with guided tutorials on various tech stacks." },
