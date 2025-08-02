@@ -23,7 +23,7 @@ const navItems = [
   { href: "/question-bank", icon: BookText, label: "Questions" },
   { href: "/resources", icon: Library, label: "Resources" },
   { href: "/ai-interviewer", icon: Mic, label: "Interviewer" },
-  { href: "/profile", icon: UserCircle, label: "Profile" },
+  { href: "/profile", icon: User, label: "Profile" },
 ];
 
 const desktopNavItems = [
@@ -78,7 +78,7 @@ export function Header() {
                     <TooltipTrigger asChild>
                        <Button variant="ghost" size="icon" asChild>
                           <Link href="/profile">
-                              <UserCircle className="h-5 w-5" />
+                              <User className="h-5 w-5" />
                               <span className="sr-only">Profile</span>
                           </Link>
                        </Button>
@@ -91,7 +91,7 @@ export function Header() {
                     <TooltipTrigger asChild>
                        <Button variant="ghost" size="icon" asChild>
                           <Link href="/architect">
-                              <User className="h-5 w-5" />
+                              <UserCircle className="h-5 w-5" />
                               <span className="sr-only">The Architect</span>
                           </Link>
                        </Button>
@@ -127,8 +127,8 @@ export function MobileNav() {
         <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
             <div className="border-t bg-background/[.96] p-2">
                 <TooltipProvider>
-                    <nav className="grid grid-cols-6 items-center justify-around gap-1">
-                        {navItems.map((item) => (
+                    <nav className="grid grid-cols-5 items-center justify-around gap-1">
+                        {navItems.filter(i => i.href !== '/profile').map((item) => (
                             <Tooltip key={item.href}>
                                 <TooltipTrigger asChild>
                                     <Link
