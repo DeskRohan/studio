@@ -169,16 +169,16 @@ export default function DashboardPage() {
           </>
         )}
       </div>
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <ConsistencyCalendar consistency={consistency} />
-             <Card className="lg:col-span-1 card-glow-effect">
+             <Card className="lg:col-span-2 card-glow-effect">
               <CardHeader>
                 <CardTitle>Daily Quote</CardTitle>
                  <CardDescription>A little motivation for your day.</CardDescription>
               </CardHeader>
-              <CardContent className="flex items-center gap-4">
+              <CardContent className="flex items-center gap-4 pt-6">
                  <Quote className="h-8 w-8 text-muted-foreground flex-shrink-0" />
-                 <p className="text-sm italic">"{quote}"</p>
+                 <blockquote className="text-sm italic border-l-4 border-primary pl-4">"{quote}"</blockquote>
               </CardContent>
             </Card>
        </div>
