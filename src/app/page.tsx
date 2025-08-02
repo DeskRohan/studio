@@ -113,7 +113,7 @@ export default function WelcomePage() {
     }
     setIsLoading(true);
      try {
-        const response = await generateCustomRoadmap({ timeline });
+        const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
         if (response.roadmap && response.roadmap.length > 0) {
             localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(response.roadmap));
             finishSetup();
@@ -229,7 +229,7 @@ export default function WelcomePage() {
                                             required
                                             value={passcode}
                                             onChange={(e) => setPasscode(e.target.value)}
-                                            className="text-center text-2xl tracking-[0.5rem]"
+                                            className="text-center text-lg tracking-[0.5rem]"
                                         />
                                     </div>
                                 </CardContent>
@@ -269,7 +269,7 @@ export default function WelcomePage() {
                                             required
                                             value={newPasscode}
                                             onChange={(e) => setNewPasscode(e.target.value)}
-                                            className="text-center text-2xl tracking-[0.5rem]"
+                                            className="text-center text-lg tracking-[0.5rem]"
                                         />
                                     </div>
                                 </CardContent>
@@ -288,14 +288,14 @@ export default function WelcomePage() {
                     )}
 
                     {mode === 'setup-roadmap' && (
-                         <Card className="w-full h-full card-glow-effect">
+                         <Card className="w-full h-full card-glow-effect flex flex-col">
                             <CardHeader>
                                 <CardTitle className="text-2xl">Choose Your Path</CardTitle>
                                 <CardDescription>
                                     Select a roadmap to start your preparation journey.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 flex-grow">
                                 <Button onClick={handleUseExpertRoadmap} variant="secondary" className="w-full h-auto text-left flex flex-col items-start p-4 gap-1">
                                     <div className="flex items-center gap-2 font-bold">
                                         <Star className="h-5 w-5 text-primary"/>
@@ -304,27 +304,34 @@ export default function WelcomePage() {
                                     <p className="text-xs text-muted-foreground pl-7">A comprehensive, battle-tested plan for placements.</p>
                                 </Button>
                                 
-                                <div className="text-sm text-center text-muted-foreground">OR</div>
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <span className="w-full border-t" />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-card px-2 text-muted-foreground">Or</span>
+                                    </div>
+                                </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="timeline" className="flex items-center gap-2 font-bold">
-                                        <Wand2 className="h-5 w-5 text-primary"/>
-                                        Generate a Custom Plan
-                                    </Label>
-                                     <Input
-                                        id="timeline"
-                                        placeholder="e.g., 3 months, 6 weeks..."
-                                        value={timeline}
-                                        onChange={(e) => setTimeline(e.target.value)}
-                                    />
+                                <div className="space-y-3 rounded-lg border p-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="timeline" className="flex items-center gap-2 font-bold">
+                                            <Wand2 className="h-5 w-5 text-primary"/>
+                                            Generate a Custom Plan with AI
+                                        </Label>
+                                         <Input
+                                            id="timeline"
+                                            placeholder="e.g., 3 months, 6 weeks..."
+                                            value={timeline}
+                                            onChange={(e) => setTimeline(e.target.value)}
+                                        />
+                                    </div>
+                                    <Button onClick={handleGenerateCustomRoadmap} disabled={isLoading || !timeline.trim()} className="w-full">
+                                        {isLoading ? <Loader2 className="animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                        {isLoading ? 'Generating Your Plan...' : 'Generate with AI'}
+                                    </Button>
                                 </div>
                             </CardContent>
-                            <CardFooter>
-                                <Button onClick={handleGenerateCustomRoadmap} disabled={isLoading || !timeline.trim()} className="w-full">
-                                    {isLoading ? <Loader2 className="animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                                    {isLoading ? 'Generating Your Plan...' : 'Generate with AI'}
-                                </Button>
-                            </CardFooter>
                         </Card>
                     )}
                   </div>
