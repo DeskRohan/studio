@@ -64,17 +64,17 @@ export function RoadmapAccordion() {
     }
   }, []);
 
-  const updateConsistencyAndStreak = useCallback((isCompleted: boolean) => {
+  const updateConsistencyAndStreak = useCallback((isProgress: boolean) => {
+    if (!isProgress) return;
+
     try {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
 
         const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
         const consistency: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
-        if (isCompleted) {
-            if (!consistency.includes(todayStr)) {
-                consistency.push(todayStr);
-                localStorage.setItem(CONSISTENCY_STORAGE_KEY, JSON.stringify(consistency));
-            }
+        if (!consistency.includes(todayStr)) {
+            consistency.push(todayStr);
+            localStorage.setItem(CONSISTENCY_STORAGE_KEY, JSON.stringify(consistency));
         }
 
         const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
@@ -121,18 +121,20 @@ export function RoadmapAccordion() {
     setRoadmap(newRoadmap);
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
 
-    const wasCompleted = !!newRoadmap.find(p => p.id === phaseId)?.topics.find(t => t.id === topicId)?.completed;
-
-    if (wasCompleted) {
-        updateConsistencyAndStreak(true);
-    } else {
-        window.dispatchEvent(new Event('storage'));
-    }
+    const isCompleted = !!newRoadmap.find(p => p.id === phaseId)?.topics.find(t => t.id === topicId)?.completed;
+    updateConsistencyAndStreak(isCompleted);
+    
+    // Always dispatch storage event to update dashboard
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleProblemsChange = (phaseId: number, newCount: number) => {
      const newRoadmap = roadmap.map((phase) => {
       if (phase.id === phaseId) {
+        // Only trigger streak logic if user is making forward progress
+        if (newCount > phase.problemsSolved) {
+            updateConsistencyAndStreak(true);
+        }
         return { ...phase, problemsSolved: newCount };
       }
       return phase;
@@ -158,7 +160,7 @@ export function RoadmapAccordion() {
     const completedCount = phase.topics.filter(t => t.completed).length;
     const totalCount = phase.topics.length;
     
-    if (completedCount === 0) return { text: 'Not Started', variant: 'secondary' as const };
+    if (completedCount === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };
     if (completedCount === totalCount) return { text: 'Completed', variant: 'default' as const };
     return { text: 'In Progress', variant: 'outline' as const };
   }
@@ -252,6 +254,7 @@ export function RoadmapAccordion() {
                          <div className="flex items-center gap-4 pt-2">
                             <Slider
                                 defaultValue={[phase.problemsSolved]}
+                                value={[phase.problemsSolved]}
                                 max={phase.totalProblems}
                                 step={1}
                                 onValueChange={(value) => handleProblemsChange(phase.id, value[0])}
