@@ -1,12 +1,16 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header, MobileNav } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { NivaFab } from '@/components/niva-fab';
+import { SplashScreen } from '@/components/splash-screen';
+
+const USER_DATA_KEY = 'user-profile-data';
+const AUTH_KEY = 'authenticated_v2';
 
 
 export default function AppLayout({
@@ -16,13 +20,32 @@ export default function AppLayout({
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem('authenticated');
+    const isAuthenticated = sessionStorage.getItem(AUTH_KEY);
+    const hasProfile = localStorage.getItem(USER_DATA_KEY);
+
+    if (!hasProfile) {
+        // If no profile exists, send them to the start page to create one
+        router.replace('/');
+        return;
+    }
+
     if (isAuthenticated !== 'true') {
-      router.push('/');
+        // If there's a profile but they aren't authenticated for the session, lock them out.
+        router.replace('/');
+    } else {
+        // User is authenticated
+        setIsAuthenticating(false);
     }
   }, [router]);
+
+
+  if (isAuthenticating) {
+    return <SplashScreen />;
+  }
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">

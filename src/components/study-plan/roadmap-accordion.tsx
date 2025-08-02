@@ -18,7 +18,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Check, List, Target, Info } from 'lucide-react';
 import { Label } from '../ui/label';
-import { defaultRoadmap, RoadmapPhase } from '@/lib/data';
+import { defaultRoadmap } from '@/lib/data';
+import type { RoadmapPhase } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -58,16 +59,25 @@ export function RoadmapAccordion() {
   const { toast } = useToast();
 
   useEffect(() => {
-    try {
-      const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-      if (savedRoadmap) {
-        setRoadmap(JSON.parse(savedRoadmap));
-      } else {
-        setRoadmap(defaultRoadmap);
-      }
-    } catch (error) {
-      console.error('Failed to load or parse roadmap from localStorage:', error);
-      setRoadmap(defaultRoadmap);
+    const loadRoadmap = () => {
+        try {
+            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
+            if (savedRoadmap) {
+                setRoadmap(JSON.parse(savedRoadmap));
+            } else {
+                setRoadmap(defaultRoadmap);
+            }
+        } catch (error) {
+            console.error('Failed to load or parse roadmap from localStorage:', error);
+            setRoadmap(defaultRoadmap);
+        }
+    };
+    loadRoadmap();
+
+    window.addEventListener('roadmapUpdated', loadRoadmap);
+
+    return () => {
+        window.removeEventListener('roadmapUpdated', loadRoadmap);
     }
   }, []);
 
@@ -209,7 +219,6 @@ export function RoadmapAccordion() {
 
   const getPhaseStatus = (phase: RoadmapPhase) => {
     const completedTopics = phase.topics.filter(t => t.completed).length;
-    const totalTopics = phase.topics.length;
     
     if (checkPhaseCompletion(phase)) return { text: 'Completed', variant: 'default' as const };
     if (completedTopics === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };

@@ -9,6 +9,7 @@ import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
 import { motivationalQuotes } from "@/lib/quotes";
 import { defaultRoadmap } from "@/lib/data";
 import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
+import { getGreeting } from "@/lib/greetings";
 
 const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
   ssr: false,
@@ -18,6 +19,7 @@ const OverviewChart = dynamic(() => import('@/components/dashboard/overview-char
 const ROADMAP_STORAGE_KEY = "dsa-roadmap-data-v2";
 const STREAK_STORAGE_KEY = "user-streak-data";
 const CONSISTENCY_STORAGE_KEY = "user-consistency-data";
+const USER_DATA_KEY = 'user-profile-data';
 
 
 type RoadmapItem = {
@@ -57,12 +59,17 @@ export default function DashboardPage() {
   const [consistency, setConsistency] = useState<string[]>([]);
   const [quote, setQuote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState("Rohan");
+  const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
     // Quote of the day
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
     setQuote(motivationalQuotes[quoteIndex]);
+
+    const userData = localStorage.getItem(USER_DATA_KEY);
+    const userName = userData ? JSON.parse(userData).name : 'Student';
+    setGreeting(getGreeting(userName));
+
 
     // Load Roadmap from localStorage
     const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
@@ -132,7 +139,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">{userName}'s Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">{greeting}</h1>
         <p className="text-muted-foreground">An overview of your progress and motivation.</p>
       </div>
       

@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText } from "lucide-react";
+import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, UserCircle } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 import {
@@ -14,6 +14,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
+const AUTH_KEY = 'authenticated_v2';
+
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -21,7 +23,7 @@ const navItems = [
   { href: "/question-bank", icon: BookText, label: "Questions" },
   { href: "/resources", icon: Library, label: "Resources" },
   { href: "/ai-interviewer", icon: Mic, label: "Interviewer" },
-  { href: "/architect", icon: User, label: "Architect" },
+  { href: "/profile", icon: UserCircle, label: "Profile" },
 ];
 
 const desktopNavItems = [
@@ -30,7 +32,6 @@ const desktopNavItems = [
   { href: "/question-bank", label: "Question Bank"},
   { href: "/resources", label: "Resources" },
   { href: "/ai-interviewer", label: "AI Interviewer" },
-  { href: "/architect", label: "The Architect" },
 ];
 
 export function Header() {
@@ -38,7 +39,7 @@ export function Header() {
   const pathname = usePathname();
 
   const handleLogout = () => {
-    sessionStorage.removeItem('authenticated');
+    sessionStorage.removeItem(AUTH_KEY);
     router.push('/');
   };
 
@@ -72,8 +73,33 @@ export function Header() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-            <ThemeToggle />
             <TooltipProvider>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                       <Button variant="ghost" size="icon" asChild>
+                          <Link href="/profile">
+                              <UserCircle className="h-5 w-5" />
+                              <span className="sr-only">Profile</span>
+                          </Link>
+                       </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>My Profile</p>
+                    </TooltipContent>
+                </Tooltip>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                       <Button variant="ghost" size="icon" asChild>
+                          <Link href="/architect">
+                              <User className="h-5 w-5" />
+                              <span className="sr-only">The Architect</span>
+                          </Link>
+                       </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>The Architect</p>
+                    </TooltipContent>
+                </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -86,6 +112,7 @@ export function Header() {
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
+            <ThemeToggle />
         </div>
       </div>
     </header>
