@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Check, List, Target, Info } from 'lucide-react';
+import { Check, List, Target, Info, RefreshCcw } from 'lucide-react';
 import { Label } from '../ui/label';
 import { defaultRoadmap } from '@/lib/data';
 import type { RoadmapPhase } from '@/lib/data';
@@ -204,10 +204,29 @@ export function RoadmapAccordion() {
     window.dispatchEvent(new Event('storage'));
   }
 
-
-  const handleResetProgress = () => {
+  const handleRestoreDefault = () => {
     setRoadmap(defaultRoadmap);
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
+    window.dispatchEvent(new Event('storage'));
+    toast({
+      title: "Default Roadmap Restored",
+      description: "The expert's default roadmap has been applied.",
+    });
+  }
+
+
+  const handleResetProgress = () => {
+    const newRoadmap = roadmap.map(phase => ({
+      ...phase,
+      problemsSolved: 0,
+      topics: phase.topics.map(topic => ({
+        ...topic,
+        completed: false,
+      })),
+    }));
+    
+    setRoadmap(newRoadmap);
+    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
     localStorage.removeItem(STREAK_STORAGE_KEY);
     localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
     window.dispatchEvent(new Event('storage'));
@@ -227,8 +246,28 @@ export function RoadmapAccordion() {
 
   return (
     <div className="relative">
-         <div className="absolute top-0 right-0">
-             <AlertDialog>
+         <div className="absolute top-0 right-0 flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Restore Default
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Restore the Default Roadmap?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will replace your current roadmap and progress with the expert-curated default roadmap. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRestoreDefault}>Restore</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">Reset Progress</Button>
               </AlertDialogTrigger>
