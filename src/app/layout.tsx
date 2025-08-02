@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,13 +25,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head />
-      <body className="font-body antialiased h-full bg-background">
+      <body className={cn("font-body antialiased h-full bg-background")}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
+          <div className="star-field"></div>
           {children}
           <Toaster />
         </ThemeProvider>
