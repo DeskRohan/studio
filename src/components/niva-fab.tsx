@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Sparkles, BrainCircuit } from 'lucide-react';
 import { askTutor } from '@/ai/flows/ask-tutor';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -71,7 +72,7 @@ export function NivaFab() {
           <span className="block text-[10px] leading-none md:hidden">Niva</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px] max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Sparkles className="h-6 w-6 text-primary"/> 
@@ -81,33 +82,35 @@ export function NivaFab() {
             Have a quick question about a DSA concept? Ask Niva.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-            <form onSubmit={handleSubmit}>
-                <Textarea
-                    placeholder="e.g., What is the time complexity of binary search?"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    rows={4}
-                    disabled={isLoading}
-                    className="text-base"
-                />
-            </form>
+        <ScrollArea className="pr-4">
+            <div className="grid gap-4 py-4">
+                <form onSubmit={handleSubmit}>
+                    <Textarea
+                        placeholder="e.g., What is the time complexity of binary search?"
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        rows={4}
+                        disabled={isLoading}
+                        className="text-base"
+                    />
+                </form>
 
-            {(isLoading || answer || error) && (
-            <div className="prose prose-sm dark:prose-invert max-w-full mt-4">
-                {isLoading && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="animate-spin h-5 w-5" />
-                    <span>Thinking...</span>
-                    </div>
+                {(isLoading || answer || error) && (
+                <div className="prose prose-sm dark:prose-invert max-w-full mt-4">
+                    {isLoading && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="animate-spin h-5 w-5" />
+                        <span>Thinking...</span>
+                        </div>
+                    )}
+                    {error && <p className="text-destructive">{error}</p>}
+                    {answer && <p>{answer}</p>}
+                </div>
                 )}
-                {error && <p className="text-destructive">{error}</p>}
-                {answer && <p>{answer}</p>}
             </div>
-            )}
-        </div>
-        <DialogFooter>
+        </ScrollArea>
+        <DialogFooter className="mt-auto pt-4">
           <Button onClick={() => handleSubmit()} disabled={isLoading || !question.trim()}>
             {isLoading ? (
                 <Loader2 className="animate-spin" />
