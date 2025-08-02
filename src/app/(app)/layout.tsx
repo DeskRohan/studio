@@ -1,9 +1,12 @@
+
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
+import { Header, MobileNav } from '@/components/header';
 import { Footer } from '@/components/footer';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 export default function AppLayout({
   children,
@@ -11,6 +14,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem('authenticated');
@@ -22,10 +26,13 @@ export default function AppLayout({
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
-      <Footer />
+      {isMobile && <MobileNav />}
+      <div className="hidden md:block">
+        <Footer />
+      </div>
     </div>
   );
 }

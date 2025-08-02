@@ -12,50 +12,46 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Mic, Library } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Mic, Library, Rocket, Home } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/study-plan", icon: Rocket, label: "Roadmap" },
   { href: "/resources", icon: Library, label: "Resources" },
   { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
   { href: "/ai-interviewer", icon: Mic, label: "AI Interviewer" },
-  { href: "/architect", icon: User, label: "The Architect" },
+];
+
+const desktopNavItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/study-plan", label: "My Roadmap" },
+  { href: "/resources", label: "Resources" },
+  { href: "/ai-tutor", label: "AI Tutor" },
+  { href: "/ai-interviewer", label: "AI Interviewer" },
+  { href: "/architect", label: "The Architect" },
 ];
 
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleLogout = () => {
     sessionStorage.removeItem('authenticated');
     router.push('/');
   };
 
-  const handleLinkClick = (href: string) => {
-    router.push(href);
-    setIsSheetOpen(false);
-  }
-
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-8">
+      {/* Desktop Navigation */}
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
             <GraduationCap className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold text-primary">NextGenSDE</span>
         </Link>
-        <Link href="/dashboard" className="text-xl font-bold text-primary">
-          NextGenSDE
-        </Link>
-        {navItems.map((item) => (
+        {desktopNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -68,36 +64,17 @@ export function Header() {
           </Link>
         ))}
       </nav>
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <nav className="grid gap-6 text-lg font-medium">
-            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold" onClick={() => handleLinkClick('/dashboard')}>
-              <GraduationCap className="h-6 w-6 text-primary" />
-              <span>NextGenSDE</span>
-            </Link>
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => handleLinkClick(item.href)}
-                className={cn(
-                  "hover:text-foreground",
-                   pathname === item.href ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </SheetContent>
-      </Sheet>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+      
+      {/* Mobile Header */}
+       <div className="flex w-full items-center md:hidden">
+         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold">
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <span className="font-bold text-primary">NextGenSDE</span>
+        </Link>
+      </div>
+
+
+      <div className="flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <div className="ml-auto flex-1 sm:flex-initial">
           <ThemeToggle />
         </div>
@@ -120,4 +97,33 @@ export function Header() {
       </div>
     </header>
   );
+}
+
+
+export function MobileNav() {
+    const pathname = usePathname();
+
+    return (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
+            <div className="bg-background/95 backdrop-blur-sm border-t p-2">
+                <nav className="grid grid-cols-5 items-center justify-around gap-1">
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                                "flex flex-col items-center justify-center gap-1 rounded-md p-2 transition-colors",
+                                pathname === item.href
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            <item.icon className="h-5 w-5" />
+                            <span className="text-[10px] leading-none">{item.label}</span>
+                        </Link>
+                    ))}
+                </nav>
+            </div>
+        </div>
+    );
 }
