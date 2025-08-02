@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, UserCircle } from "lucide-react";
+import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 import {
@@ -23,7 +23,6 @@ const navItems = [
   { href: "/question-bank", icon: BookText, label: "Questions" },
   { href: "/resources", icon: Library, label: "Resources" },
   { href: "/ai-interviewer", icon: Mic, label: "Interviewer" },
-  { href: "/profile", icon: User, label: "Profile" },
 ];
 
 const desktopNavItems = [
@@ -91,7 +90,7 @@ export function Header() {
                     <TooltipTrigger asChild>
                        <Button variant="ghost" size="icon" asChild>
                           <Link href="/architect">
-                              <UserCircle className="h-5 w-5" />
+                              <DraftingCompass className="h-5 w-5" />
                               <span className="sr-only">The Architect</span>
                           </Link>
                        </Button>
@@ -128,7 +127,7 @@ export function MobileNav() {
             <div className="border-t bg-background/[.96] p-2">
                 <TooltipProvider>
                     <nav className="grid grid-cols-5 items-center justify-around gap-1">
-                        {navItems.filter(i => i.href !== '/profile').map((item) => (
+                        {navItems.map((item) => (
                             <Tooltip key={item.href}>
                                 <TooltipTrigger asChild>
                                     <Link
