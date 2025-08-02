@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
+import { SplashScreen } from '@/components/splash-screen';
 
 const CORRECT_PASSCODE = '218701';
 
@@ -29,7 +30,7 @@ export default function PasscodePage() {
         if (passcode === CORRECT_PASSCODE) {
             sessionStorage.setItem('authenticated', 'true');
             setIsUnlocked(true);
-            setTimeout(() => router.push('/dashboard'), 1500);
+            setTimeout(() => router.push('/dashboard'), 2500); // Match splash screen duration
         } else {
             toast({
                 title: 'Incorrect Passcode',
@@ -40,6 +41,10 @@ export default function PasscodePage() {
         }
     }, 500);
   };
+
+    if (isUnlocked) {
+        return <SplashScreen />;
+    }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -79,51 +84,36 @@ export default function PasscodePage() {
                     </div>
                   </div>
                   
-                  <div className="w-full max-w-sm mx-auto [perspective:1000px]">
-                    <div className={cn("relative h-full w-full transition-transform duration-700 [transform-style:preserve-3d]", isUnlocked && "[transform:rotateY(180deg)]")}>
-                        {/* Front of the card */}
-                        <div className="absolute w-full h-full [backface-visibility:hidden]">
-                            <Card className="w-full h-full card-glow-effect">
-                                <CardHeader>
-                                <CardTitle className="text-2xl">Enter Passcode</CardTitle>
-                                <CardDescription>
-                                    Please enter the passcode to access your dashboard.
-                                </CardDescription>
-                                </CardHeader>
-                                <form onSubmit={handleLogin}>
-                                <CardContent className="grid gap-4">
-                                    <div className="grid gap-2">
-                                    <Label htmlFor="passcode">Passcode</Label>
-                                    <Input
-                                        id="passcode"
-                                        type="password"
-                                        placeholder="••••••"
-                                        required
-                                        value={passcode}
-                                        onChange={(e) => setPasscode(e.target.value)}
-                                    />
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="flex flex-col">
-                                    <Button type="submit" className="w-full" disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                                    Unlock
-                                    </Button>
-                                </CardFooter>
-                                </form>
-                            </Card>
-                        </div>
-                        {/* Back of the card */}
-                        <div className="absolute w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden]">
-                            <Card className="w-full h-full card-glow-effect flex flex-col items-center justify-center">
-                                <CardContent className="text-center">
-                                    <GraduationCap className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                                    <h2 className="text-3xl font-bold text-primary font-headline">NextGenSDE</h2>
-                                    <p className="text-muted-foreground">Welcome! Redirecting...</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
+                  <div className="w-full max-w-sm mx-auto">
+                    <Card className="w-full h-full card-glow-effect">
+                        <CardHeader>
+                        <CardTitle className="text-2xl">Enter Passcode</CardTitle>
+                        <CardDescription>
+                            Please enter the passcode to access your dashboard.
+                        </CardDescription>
+                        </CardHeader>
+                        <form onSubmit={handleLogin}>
+                        <CardContent className="grid gap-4">
+                            <div className="grid gap-2">
+                            <Label htmlFor="passcode">Passcode</Label>
+                            <Input
+                                id="passcode"
+                                type="password"
+                                placeholder="••••••"
+                                required
+                                value={passcode}
+                                onChange={(e) => setPasscode(e.target.value)}
+                            />
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex flex-col">
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                            Unlock
+                            </Button>
+                        </CardFooter>
+                        </form>
+                    </Card>
                   </div>
                 </div>
               </div>
