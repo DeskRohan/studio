@@ -72,7 +72,7 @@ export function NivaFab() {
           <span className="block text-[10px] leading-none md:hidden">Niva</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px] max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[525px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Sparkles className="h-6 w-6 text-primary"/> 
@@ -82,44 +82,49 @@ export function NivaFab() {
             Have a quick question about a DSA concept? Ask Niva.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="pr-4">
-            <div className="grid gap-4 py-4">
-                <form onSubmit={handleSubmit}>
-                    <Textarea
-                        placeholder="e.g., What is the time complexity of binary search?"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        rows={4}
-                        disabled={isLoading}
-                        className="text-base"
-                    />
-                </form>
-
-                {(isLoading || answer || error) && (
-                <div className="prose prose-sm dark:prose-invert max-w-full mt-4">
-                    {isLoading && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="animate-spin h-5 w-5" />
-                        <span>Thinking...</span>
-                        </div>
+        
+        <div className="flex-grow overflow-hidden">
+            <ScrollArea className="h-full pr-6">
+                <div className="grid gap-4 py-4">
+                    {(isLoading || answer || error) && (
+                    <div className="prose prose-sm dark:prose-invert max-w-full">
+                        {isLoading && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="animate-spin h-5 w-5" />
+                            <span>Thinking...</span>
+                            </div>
+                        )}
+                        {error && <p className="text-destructive">{error}</p>}
+                        {answer && <p>{answer}</p>}
+                    </div>
                     )}
-                    {error && <p className="text-destructive">{error}</p>}
-                    {answer && <p>{answer}</p>}
                 </div>
+            </ScrollArea>
+        </div>
+
+        <div className="flex-shrink-0 pt-4">
+             <form onSubmit={handleSubmit}>
+                <Textarea
+                    placeholder="e.g., What is the time complexity of binary search?"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    rows={3}
+                    disabled={isLoading}
+                    className="text-base"
+                />
+            </form>
+            <DialogFooter className="mt-4">
+              <Button onClick={() => handleSubmit()} disabled={isLoading || !question.trim()} className="w-full">
+                {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
                 )}
-            </div>
-        </ScrollArea>
-        <DialogFooter className="mt-auto pt-4">
-          <Button onClick={() => handleSubmit()} disabled={isLoading || !question.trim()}>
-            {isLoading ? (
-                <Loader2 className="animate-spin" />
-            ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-            )}
-            Get Answer
-          </Button>
-        </DialogFooter>
+                Get Answer
+              </Button>
+            </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
