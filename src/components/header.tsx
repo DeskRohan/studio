@@ -43,7 +43,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/90 px-4 sm:px-8">
        <div className="flex w-full items-center justify-between">
          <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
             <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
@@ -98,7 +98,7 @@ export function MobileNav() {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
-            <div className="border-t bg-background/95 p-2 backdrop-blur-sm">
+            <div className="border-t bg-background/90 p-2">
                 <TooltipProvider>
                     <nav className="grid grid-cols-6 items-center justify-around gap-1">
                         {navItems.map((item) => (
