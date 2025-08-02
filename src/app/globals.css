@@ -72,8 +72,14 @@
   background-image: 
     radial-gradient(1px 1px at 10% 20%, white, rgba(255,255,255,0)),
     radial-gradient(1px 1px at 80% 30%, white, rgba(255,255,255,0)),
+    radial-gradient(1px 1px at 50% 10%, white, rgba(255,255,255,0)),
+    radial-gradient(1px 1px at 20% 90%, white, rgba(255,255,255,0)),
     radial-gradient(2px 2px at 40% 50%, white, rgba(255,255,255,0)),
     radial-gradient(2px 2px at 90% 60%, white, rgba(255,255,255,0)),
+    radial-gradient(2px 2px at 15% 70%, white, rgba(255,255,255,0)),
+    radial-gradient(1px 1px at 65% 85%, white, rgba(255,255,255,0)),
+    radial-gradient(2px 2px at 30% 35%, white, rgba(255,255,255,0)),
+    radial-gradient(1px 1px at 75% 25%, white, rgba(255,255,255,0)),
     radial-gradient(1px 1px at 25% 75%, white, rgba(255,255,255,0)),
     radial-gradient(2px 2px at 55% 90%, white, rgba(255,255,255,0));
   animation: move-stars 150s linear infinite;
