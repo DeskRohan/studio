@@ -73,7 +73,7 @@ export function Header() {
         </Link>
       </div>
 
-      <div className="flex items-center gap-4 md:ml-auto">
+      <div className="flex flex-1 items-center justify-end gap-4">
         <ThemeToggle />
         <TooltipProvider>
             <Tooltip>
@@ -113,7 +113,7 @@ export function MobileNav() {
                             )}
                         >
                             <item.icon className="h-5 w-5" />
-                            <span className="text-[10px] leading-none text-center xs:hidden sm:block">{item.label}</span>
+                            <span className="hidden xs:block text-[10px] leading-none text-center">{item.label}</span>
                         </Link>
                     ))}
                 </nav>

@@ -11,7 +11,7 @@ export default {
   ],
   theme: {
      screens: {
-      xs: '400px',
+      'xs': '400px',
       ...screens,
     },
     extend: {
