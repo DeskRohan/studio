@@ -60,46 +60,41 @@ export function RoadmapTracker() {
 
   useEffect(() => {
     const roadmapDocRef = getRoadmapDocRef();
-    const streakDocRef = getStreakDocRef();
-
-    const initializeData = async () => {
-      // First, set up the real-time listener to get live updates
-      const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            setRoadmapItems(docSnap.data().items as RoadmapItem[]);
-        } else {
-            // If the document doesn't exist after the initial check, create it.
-            // This is safer than checking before listening.
-            console.log("Roadmap not found, creating a new one.");
-            setDoc(roadmapDocRef, { items: defaultRoadmap });
-            setRoadmapItems(defaultRoadmap);
-        }
-        setIsLoading(false);
-      }, (error) => {
-          console.error("Error fetching roadmap:", error);
-          toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
-          setIsLoading(false);
-      });
-      
-      const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-              setStreakData(docSnap.data() as StreakData);
-          } else {
-              setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
-          }
-      });
-
-      return () => {
-        unsubscribeRoadmap();
-        unsubscribeStreak();
+    
+    // Use onSnapshot for real-time updates. It handles the initial data load as well.
+    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        // Document exists, load the data from it
+        setRoadmapItems(docSnap.data().items as RoadmapItem[]);
+      } else {
+        // Document doesn't exist, create it with the default roadmap
+        console.log("Roadmap not found, creating a new one.");
+        const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
+        setDoc(roadmapDocRef, { items: newItems });
+        setRoadmapItems(newItems);
       }
-    }
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching roadmap:", error);
+      toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
+      setIsLoading(false);
+    });
 
-    const unsubPromise = initializeData();
+    const streakDocRef = getStreakDocRef();
+    const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            setStreakData(docSnap.data() as StreakData);
+        } else {
+            // Document doesn't exist, create it with default values
+            setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
+        }
+    });
 
+    // Cleanup function to unsubscribe from listeners when the component unmounts
     return () => {
-        unsubPromise.then(unsub => unsub && unsub());
-    }
+      unsubscribeRoadmap();
+      unsubscribeStreak();
+    };
   }, [getRoadmapDocRef, getStreakDocRef, toast]);
 
 
