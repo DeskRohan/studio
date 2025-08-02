@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,9 +34,9 @@ export default function AiInterviewerPage() {
     setCurrentQuestion(interviewQuestions[randomIndex]);
   };
 
-  useState(() => {
+  useEffect(() => {
     getNewQuestion();
-  });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
