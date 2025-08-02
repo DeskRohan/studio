@@ -17,7 +17,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Crown } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Crown, Mic } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
   { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
+  { href: "/ai-interviewer", icon: Mic, label: "AI Interviewer" },
   { href: "/architect", icon: User, label: "The Architect" },
 ];
 
@@ -58,7 +59,7 @@ export function Header() {
             href={item.href}
             className={cn(
               "transition-colors hover:text-foreground",
-              pathname === item.href ? "text-foreground" : "text-muted-foreground"
+              pathname === item.href ? "text-foreground font-semibold" : "text-muted-foreground"
             )}
           >
             {item.label}

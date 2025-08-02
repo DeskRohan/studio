@@ -7,14 +7,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck } from 'lucide-react';
+import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, CheckCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { cn } from '@/lib/utils';
 
 const CORRECT_PASSCODE = '218701';
 
 export default function PasscodePage() {
   const [passcode, setPasscode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -25,7 +27,8 @@ export default function PasscodePage() {
     setTimeout(() => {
         if (passcode === CORRECT_PASSCODE) {
             sessionStorage.setItem('authenticated', 'true');
-            router.push('/dashboard');
+            setIsUnlocked(true);
+            setTimeout(() => router.push('/dashboard'), 1500);
         } else {
             toast({
                 title: 'Incorrect Passcode',
@@ -62,7 +65,7 @@ export default function PasscodePage() {
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div className="flex items-center gap-2">
                             <BrainCircuit className="h-5 w-5 text-primary" />
-                            <span>AI-Powered Tutor</span>
+                            <span>AI-Powered Tutor & Interviewer</span>
                         </div>
                          <div className="flex items-center gap-2">
                             <Target className="h-5 w-5 text-primary" />
@@ -74,35 +77,53 @@ export default function PasscodePage() {
                         </div>
                     </div>
                   </div>
-                  <Card className="w-full max-w-sm mx-auto card-glow-effect">
-                    <CardHeader>
-                      <CardTitle className="text-2xl">Enter Passcode</CardTitle>
-                      <CardDescription>
-                        Please enter the passcode to access your dashboard.
-                      </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={handleLogin}>
-                      <CardContent className="grid gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="passcode">Passcode</Label>
-                          <Input
-                            id="passcode"
-                            type="password"
-                            placeholder="••••••"
-                            required
-                            value={passcode}
-                            onChange={(e) => setPasscode(e.target.value)}
-                          />
+                  
+                  <div className="w-full max-w-sm mx-auto [perspective:1000px]">
+                    <div className={cn("relative h-full w-full transition-transform duration-700 [transform-style:preserve-3d]", isUnlocked && "[transform:rotateY(180deg)]")}>
+                        {/* Front of the card */}
+                        <div className="absolute w-full h-full [backface-visibility:hidden]">
+                            <Card className="w-full h-full card-glow-effect">
+                                <CardHeader>
+                                <CardTitle className="text-2xl">Enter Passcode</CardTitle>
+                                <CardDescription>
+                                    Please enter the passcode to access your dashboard.
+                                </CardDescription>
+                                </CardHeader>
+                                <form onSubmit={handleLogin}>
+                                <CardContent className="grid gap-4">
+                                    <div className="grid gap-2">
+                                    <Label htmlFor="passcode">Passcode</Label>
+                                    <Input
+                                        id="passcode"
+                                        type="password"
+                                        placeholder="••••••"
+                                        required
+                                        value={passcode}
+                                        onChange={(e) => setPasscode(e.target.value)}
+                                    />
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="flex flex-col">
+                                    <Button type="submit" className="w-full" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                                    Unlock
+                                    </Button>
+                                </CardFooter>
+                                </form>
+                            </Card>
                         </div>
-                      </CardContent>
-                      <CardFooter className="flex flex-col">
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                          {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                          Unlock
-                        </Button>
-                      </CardFooter>
-                    </form>
-                  </Card>
+                        {/* Back of the card */}
+                        <div className="absolute w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden]">
+                            <Card className="w-full h-full card-glow-effect flex flex-col items-center justify-center">
+                                <CardContent className="text-center">
+                                    <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-pulse" />
+                                    <h2 className="text-2xl font-bold">Access Granted!</h2>
+                                    <p className="text-muted-foreground">Redirecting to your dashboard...</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>

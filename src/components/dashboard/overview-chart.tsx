@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Pie, PieChart, ResponsiveContainer, Cell, Legend } from "recharts";
+import { Pie, PieChart, ResponsiveContainer, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -16,7 +16,7 @@ const chartConfig = {
   },
   remaining: {
     label: "Remaining",
-    color: "hsl(var(--muted))",
+    color: "hsl(var(--chart-2))",
   },
 };
 
@@ -27,6 +27,7 @@ export function OverviewChart({ completed, remaining }: { completed: number; rem
     ];
     
     const total = completed + remaining;
+    const completedPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
     <Card className="col-span-1 lg:col-span-3">
@@ -41,8 +42,11 @@ export function OverviewChart({ completed, remaining }: { completed: number; rem
         >
           <PieChart>
             <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+                cursor={false}
+                content={<ChartTooltipContent
+                    hideLabel
+                    formatter={(value, name) => [`${value} topics`, name]}
+                />}
             />
             <Pie
               data={chartData}
@@ -52,9 +56,10 @@ export function OverviewChart({ completed, remaining }: { completed: number; rem
               outerRadius={120}
               strokeWidth={2}
               paddingAngle={4}
+              cy="50%"
             >
-                <Cell key={`cell-0`} fill={"hsl(var(--chart-1))"} />
-                <Cell key={`cell-1`} fill={"hsl(var(--chart-2))"} />
+                <Cell key={`cell-0`} fill="hsl(var(--chart-1))" />
+                <Cell key={`cell-1`} fill="hsl(var(--muted))" />
             </Pie>
              {total > 0 && (
                 <text
@@ -64,7 +69,7 @@ export function OverviewChart({ completed, remaining }: { completed: number; rem
                     dominantBaseline="middle"
                     className="fill-foreground text-3xl font-bold"
                 >
-                    {Math.round((completed / total) * 100)}%
+                    {completedPercent}%
                 </text>
              )}
           </PieChart>

@@ -2,13 +2,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { OverviewChart } from "@/components/dashboard/overview-chart";
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, Target, Flame, Quote } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { motivationalQuotes } from "@/lib/quotes";
+
+const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 col-span-1 lg:col-span-3" />,
+});
+
 
 const ROADMAP_DOC_ID = "dsa-roadmap-main";
 
@@ -29,6 +35,7 @@ export default function DashboardPage() {
   const [streak, setStreak] = useState(0);
   const [quote, setQuote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState("Rohan");
 
   useEffect(() => {
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
@@ -65,7 +72,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Rohan's Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{userName}'s Dashboard</h1>
           <p className="text-muted-foreground">An overview of your progress.</p>
         </div>
       </div>
@@ -115,13 +122,13 @@ export default function DashboardPage() {
                 <Quote className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm">{quote}</p>
+                <p className="text-sm italic">"{quote}"</p>
               </CardContent>
             </Card>
           </>
         )}
       </div>
-      {isLoading ? <Skeleton className="h-96" /> : <OverviewChart completed={completedCount} remaining={remainingCount} />}
+      <OverviewChart completed={completedCount} remaining={remainingCount} />
     </div>
   );
 }
