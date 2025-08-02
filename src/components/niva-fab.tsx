@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, BrainCircuit } from 'lucide-react';
+import { Loader2, Sparkles, BrainCircuit, Clipboard, Check } from 'lucide-react';
 import { askTutor } from '@/ai/flows/ask-tutor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -17,6 +17,44 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { useIsMobile } from '@/hooks/use-mobile';
+import ReactMarkdown from 'react-markdown';
+import {CopyToClipboard} from 'react-copy-to-clipboard';
+import remarkGfm from 'remark-gfm';
+
+// Custom component to render code blocks with a copy button
+const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
+  const [copied, setCopied] = useState(false);
+  const match = /language-(\w+)/.exec(className || '');
+  const code = String(children).replace(/\n$/, '');
+
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return !inline && match ? (
+    <div className="relative my-4 rounded-md bg-secondary/50 text-secondary-foreground">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+          <span className="text-sm font-semibold">{match[1]}</span>
+          <CopyToClipboard text={code} onCopy={handleCopy}>
+            <Button variant="ghost" size="sm" className="text-xs">
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Clipboard className="h-4 w-4" />}
+              <span className="ml-2">{copied ? 'Copied!' : 'Copy'}</span>
+            </Button>
+          </CopyToClipboard>
+      </div>
+      <div className="p-4 overflow-x-auto">
+        <code className={className} {...props}>
+          {children}
+        </code>
+      </div>
+    </div>
+  ) : (
+    <code className="bg-secondary/50 text-secondary-foreground px-1 py-0.5 rounded-sm" {...props}>
+      {children}
+    </code>
+  );
+};
 
 
 export function NivaFab() {
@@ -102,7 +140,14 @@ export function NivaFab() {
                     </div>
                   )}
                   {error && <p className="text-destructive">{error}</p>}
-                  {answer && <p>{answer}</p>}
+                  {answer && (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{ code: CodeBlock }}
+                    >
+                      {answer}
+                    </ReactMarkdown>
+                  )}
                 </div>
               )}
             </div>

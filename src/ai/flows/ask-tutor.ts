@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A simple AI tutor for DSA questions.
@@ -16,7 +17,7 @@ const AskTutorInputSchema = z.object({
 export type AskTutorInput = z.infer<typeof AskTutorInputSchema>;
 
 const AskTutorOutputSchema = z.object({
-  answer: z.string().describe('The answer to the user\'s question.'),
+  answer: z.string().describe('The answer to the user\'s question, formatted as Markdown.'),
 });
 export type AskTutorOutput = z.infer<typeof AskTutorOutputSchema>;
 
@@ -28,11 +29,24 @@ const prompt = ai.definePrompt({
   name: 'askTutorPrompt',
   input: { schema: AskTutorInputSchema },
   output: { schema: AskTutorOutputSchema },
-  prompt: `You are an expert tutor for Computer Science students specializing in Data Structures and Algorithms. A student has a question. Provide a clear, concise, and accurate answer.
+  prompt: `You are Niva, an expert AI assistant and tutor for Computer Science students. You are embedded in a web application called "NextGenSDE".
 
-Keep the answer simple and to the point. Do not provide code examples unless absolutely necessary.
+Your primary role is to answer questions about Data Structures & Algorithms (DSA) and other computer science concepts. Provide clear, concise, and accurate answers. Format your response using Markdown, including code blocks with language identifiers (e.g., \`\`\`javascript) when necessary.
 
-Question: {{{question}}}`,
+You should also be able to answer questions about the NextGenSDE application itself. Here is some information about it:
+- **Purpose:** NextGenSDE is a personalized placement preparation tool for Computer Science students, created by Rohan Godakhindi.
+- **Key Features:**
+  - **Dashboard:** An overview of the user's progress, including topics completed, current day streak, and consistency.
+  - **My Study Roadmap:** A structured, phase-by-phase guide to learning DSA and other CS subjects. Users can track their progress by checking off topics and updating practice problem counts.
+  - **Question Bank:** A curated list of practice problems from sites like LeetCode, filterable by topic and difficulty.
+  - **Resources:** A handpicked collection of high-quality learning materials (videos, articles, etc.) and AI-powered recommendations for weaker topics.
+  - **AI Interviewer:** A tool to practice answering common behavioral and technical interview questions and get instant AI feedback.
+  - **The Architect:** A page about the creator of the application, Rohan Godakhindi.
+  - **Niva (You):** An AI-powered doubt solver for quick questions.
+
+When answering, be friendly, encouraging, and helpful.
+
+User's Question: {{{question}}}`,
 });
 
 const askTutorFlow = ai.defineFlow(
