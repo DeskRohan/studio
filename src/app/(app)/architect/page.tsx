@@ -9,7 +9,7 @@ export default function ArchitectPage() {
   return (
     <div className="flex flex-col items-center justify-center space-y-6">
        <div>
-        <h1 className="text-3xl font-bold tracking-tight text-center">The Architect</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-center font-headline">The Architect</h1>
         <p className="text-muted-foreground text-center">
           Meet the creator behind NextGenSDE.
         </p>

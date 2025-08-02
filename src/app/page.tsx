@@ -44,7 +44,7 @@ export default function PasscodePage() {
   return (
     <div className="flex min-h-screen w-full flex-col">
         <header className="flex h-16 items-center justify-between px-4 md:px-8 border-b">
-             <div className="flex items-center gap-2 text-lg font-bold text-primary">
+             <div className="flex items-center gap-2 text-lg font-bold text-primary font-headline">
                 <GraduationCap className="h-6 w-6" />
                 <span>NextGenSDE</span>
             </div>
@@ -56,7 +56,7 @@ export default function PasscodePage() {
                 <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
                   <div className="flex flex-col justify-center space-y-4">
                     <div className="space-y-2">
-                      <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+                      <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent font-headline">
                         Unlock Your Placement Potential
                       </h1>
                       <p className="max-w-[600px] text-muted-foreground md:text-xl">
@@ -118,7 +118,7 @@ export default function PasscodePage() {
                             <Card className="w-full h-full card-glow-effect flex flex-col items-center justify-center">
                                 <CardContent className="text-center">
                                     <GraduationCap className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                                    <h2 className="text-3xl font-bold text-primary">NextGenSDE</h2>
+                                    <h2 className="text-3xl font-bold text-primary font-headline">NextGenSDE</h2>
                                     <p className="text-muted-foreground">Welcome! Redirecting...</p>
                                 </CardContent>
                             </Card>

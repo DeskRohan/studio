@@ -100,7 +100,7 @@ export function Recommendations() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Sparkles className="h-6 w-6 text-primary" />
-                                <span>AI-Powered Recommendations</span>
+                                <span className="font-headline">AI-Powered Recommendations</span>
                             </CardTitle>
                             <CardDescription className="mt-2">
                                 Based on your roadmap progress, here are some personalized suggestions to focus on.
@@ -134,7 +134,7 @@ export function Recommendations() {
                                             <Lightbulb className="h-5 w-5"/>
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-lg text-primary">{rec.topic}</h4>
+                                            <h4 className="font-bold text-lg text-primary font-headline">{rec.topic}</h4>
                                             <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: rec.recommendation.replace(/\n/g, '<br />') }} />
                                         </div>
                                     </div>

@@ -1,5 +1,5 @@
 import type {Config} from 'tailwindcss';
-import { screens } from 'tailwindcss/defaultTheme'
+import { fontFamily, screens } from 'tailwindcss/defaultTheme'
 
 
 export default {
@@ -16,10 +16,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Unbounded', 'sans-serif'],
-        body: ['Unbounded', 'sans-serif'],
+        sans: ['var(--font-sans)', ...fontFamily.sans],
         headline: ['Unbounded', 'sans-serif'],
-        code: ['monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

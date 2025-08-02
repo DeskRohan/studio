@@ -58,7 +58,7 @@ export default function QuestionBankPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Question Bank</h1>
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Question Bank</h1>
                 <p className="text-muted-foreground">
                     A curated collection of practice problems to sharpen your skills.
                 </p>

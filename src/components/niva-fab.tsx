@@ -68,7 +68,7 @@ export function NivaFab() {
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
         <Button
-          className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg z-40 flex items-center justify-center flex-col gap-1 md:h-auto md:w-auto md:py-2 md:px-4 md:bottom-6 md:right-6 md:rounded-full"
+          className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg z-40 flex items-center justify-center flex-col gap-1 md:h-auto md:w-auto md:py-2 md:px-4 md:bottom-6 md:right-6 md:rounded-full font-headline"
         >
           <BrainCircuit className="h-6 w-6 md:mr-2" />
           <span className="hidden md:block font-semibold">Ask Niva</span>
@@ -81,7 +81,7 @@ export function NivaFab() {
         onOpenAutoFocus={(e) => e.preventDefault()} // Prevents autofocus on the first input
       >
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2 text-2xl">
+          <SheetTitle className="flex items-center gap-2 text-2xl font-headline">
             <Sparkles className="h-6 w-6 text-primary"/> 
             Niva: Your AI Doubt Solver
           </SheetTitle>

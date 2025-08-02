@@ -49,7 +49,7 @@ export default function ResourcesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Curated Resources</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Curated Resources</h1>
         <p className="text-muted-foreground">
           Handpicked resources and AI-powered recommendations to supercharge your preparation.
         </p>
@@ -58,28 +58,28 @@ export default function ResourcesPage() {
       <Recommendations />
       
       <section>
-        <h2 className="text-2xl font-semibold tracking-tight mb-4">Data Structures & Algorithms</h2>
+        <h2 className="text-2xl font-semibold tracking-tight font-headline mb-4">Data Structures & Algorithms</h2>
         <div className="grid md:grid-cols-2 gap-4">
             {resources.dsa.map(res => <ResourceCard key={res.title} {...res} />)}
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold tracking-tight mb-4">Core CS Subjects</h2>
+        <h2 className="text-2xl font-semibold tracking-tight font-headline mb-4">Core CS Subjects</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {resources.subjects.map(res => <ResourceCard key={res.title} {...res} />)}
         </div>
       </section>
       
        <section>
-        <h2 className="text-2xl font-semibold tracking-tight mb-4">Aptitude Practice</h2>
+        <h2 className="text-2xl font-semibold tracking-tight font-headline mb-4">Aptitude Practice</h2>
         <div className="grid md:grid-cols-2 gap-4">
             {resources.aptitude.map(res => <ResourceCard key={res.title} {...res} />)}
         </div>
       </section>
 
        <section>
-        <h2 className="text-2xl font-semibold tracking-tight mb-4">Project Development</h2>
+        <h2 className="text-2xl font-semibold tracking-tight font-headline mb-4">Project Development</h2>
         <div className="grid md:grid-cols-2 gap-4">
             {resources.projects.map(res => <ResourceCard key={res.title} {...res} />)}
         </div>
