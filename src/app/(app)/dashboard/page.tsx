@@ -15,7 +15,7 @@ const OverviewChart = dynamic(() => import('@/components/dashboard/overview-char
   loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
 });
 
-const ROADMAP_STORAGE_KEY = "dsa-roadmap-data";
+const ROADMAP_STORAGE_KEY = "dsa-roadmap-data-v2";
 const STREAK_STORAGE_KEY = "user-streak-data";
 const CONSISTENCY_STORAGE_KEY = "user-consistency-data";
 
@@ -24,6 +24,17 @@ type RoadmapItem = {
   id: number;
   text: string;
   completed: boolean;
+};
+
+type RoadmapPhase = {
+    id: number;
+    title: string;
+    duration: string;
+    goal: string;
+    topics: RoadmapItem[];
+    practiceGoal: string;
+    totalProblems: number;
+    problemsSolved: number;
 };
 
 type StreakData = {
@@ -55,10 +66,17 @@ export default function DashboardPage() {
 
     // Load Roadmap from localStorage
     const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-    const roadmapItems: RoadmapItem[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap.map(item => ({ ...item, completed: false }));
-    const topicItems = roadmapItems.filter(item => !item.text.startsWith("#"));
-    setCompletedCount(topicItems.filter(item => item.completed).length);
-    setTotalCount(topicItems.length);
+    const roadmapItems: RoadmapPhase[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap;
+    
+    let totalTopics = 0;
+    let completedTopics = 0;
+    roadmapItems.forEach(phase => {
+        totalTopics += phase.topics.length;
+        completedTopics += phase.topics.filter(topic => topic.completed).length;
+    });
+
+    setCompletedCount(completedTopics);
+    setTotalCount(totalTopics);
 
     // Load Streak from localStorage
     const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
@@ -76,10 +94,16 @@ export default function DashboardPage() {
      const handleStorageChange = () => {
         const updatedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
         if (updatedRoadmap) {
-             const newItems: RoadmapItem[] = JSON.parse(updatedRoadmap);
-             const newTopicItems = newItems.filter(item => !item.text.startsWith("#"));
-             setCompletedCount(newTopicItems.filter(item => item.completed).length);
-             setTotalCount(newTopicItems.length);
+             const newItems: RoadmapPhase[] = JSON.parse(updatedRoadmap);
+             let newTotalTopics = 0;
+             let newCompletedTopics = 0;
+            newItems.forEach(phase => {
+                newTotalTopics += phase.topics.length;
+                newCompletedTopics += phase.topics.filter(topic => topic.completed).length;
+            });
+
+            setCompletedCount(newCompletedTopics);
+            setTotalCount(newTotalTopics);
         }
 
         const updatedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
