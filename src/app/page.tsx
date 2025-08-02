@@ -21,9 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { defaultRoadmap } from '@/lib/data';
+
 
 const USER_DATA_KEY = 'user-profile-data';
 const AUTH_KEY = 'authenticated_v2';
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 
 export default function WelcomePage() {
@@ -90,6 +93,11 @@ export default function WelcomePage() {
     setIsLoading(true);
     const userData = { name: name.trim(), passcode: newPasscode };
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+
+    if (newPasscode === '218701') {
+        localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
+    }
+
     sessionStorage.setItem(AUTH_KEY, 'true');
     setIsUnlocked(true);
     setTimeout(() => router.push('/dashboard'), 2500);
