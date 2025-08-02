@@ -245,8 +245,8 @@ export function RoadmapAccordion() {
   }
 
   return (
-    <div className="relative">
-         <div className="absolute top-0 right-0 flex gap-2">
+    <div>
+        <div className="flex justify-end gap-2 mb-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -286,93 +286,95 @@ export function RoadmapAccordion() {
             </AlertDialog>
          </div>
 
-        {/* Vertical timeline bar */}
-        <div className="absolute left-6 top-6 h-full w-0.5 bg-border -z-10"></div>
+        <div className="relative">
+            {/* Vertical timeline bar */}
+            <div className="absolute left-6 top-6 h-full w-0.5 bg-border -z-10"></div>
 
-        <Accordion
-            type="single"
-            collapsible
-            className="w-full"
-            value={activeAccordion}
-            onValueChange={setActiveAccordion}
-        >
-        {roadmap.map((phase) => {
-          const completedTopics = phase.topics.filter(t => t.completed).length;
-          const totalTopics = phase.topics.length;
-          const phaseProgress = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
-          const status = getPhaseStatus(phase);
+            <Accordion
+                type="single"
+                collapsible
+                className="w-full"
+                value={activeAccordion}
+                onValueChange={setActiveAccordion}
+            >
+            {roadmap.map((phase) => {
+              const completedTopics = phase.topics.filter(t => t.completed).length;
+              const totalTopics = phase.topics.length;
+              const phaseProgress = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
+              const status = getPhaseStatus(phase);
 
-          return (
-            <div key={phase.id} className="relative pl-12 pb-8">
-              <div className="absolute left-0 top-0 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xl ring-8 ring-background">
-                {phase.id}
-              </div>
-              <AccordionItem value={`phase-${phase.id}`} className="border-none">
-                <Card className="overflow-hidden card-glow-effect">
-                    <AccordionTrigger className="p-6 hover:no-underline text-left">
-                        <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className="text-xl font-bold">{phase.title}</h3>
-                                    <p className="text-sm font-semibold text-primary">{phase.duration}</p>
-                                    <p className="text-sm text-muted-foreground mt-1">{phase.goal}</p>
+              return (
+                <div key={phase.id} className="relative pl-12 pb-8">
+                  <div className="absolute left-0 top-0 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xl ring-8 ring-background">
+                    {phase.id}
+                  </div>
+                  <AccordionItem value={`phase-${phase.id}`} className="border-none">
+                    <Card className="overflow-hidden card-glow-effect">
+                        <AccordionTrigger className="p-6 hover:no-underline text-left">
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="text-xl font-bold">{phase.title}</h3>
+                                        <p className="text-sm font-semibold text-primary">{phase.duration}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">{phase.goal}</p>
+                                    </div>
+                                    <Badge variant={status.variant} className={cn(status.variant === 'default' && "bg-green-600")}>{status.text}</Badge>
                                 </div>
-                                <Badge variant={status.variant} className={cn(status.variant === 'default' && "bg-green-600")}>{status.text}</Badge>
+                                <div className="mt-4">
+                                    <Progress value={phaseProgress} className="h-2" />
+                                    <p className="text-xs text-muted-foreground mt-1">{completedTopics} / {totalTopics} topics completed</p>
+                                </div>
                             </div>
-                            <div className="mt-4">
-                                <Progress value={phaseProgress} className="h-2" />
-                                <p className="text-xs text-muted-foreground mt-1">{completedTopics} / {totalTopics} topics completed</p>
+                        </AccordionTrigger>
+                      <AccordionContent>
+                        <CardContent className="grid md:grid-cols-2 gap-x-8 gap-y-4 px-6 pb-6">
+                          {/* Topics Column */}
+                          <div className="space-y-3">
+                            <h4 className="font-semibold flex items-center gap-2"><List className="h-5 w-5 text-primary"/> Topics</h4>
+                            <div className="space-y-2">
+                              {phase.topics.map(topic => (
+                                <div key={topic.id} className="flex items-center gap-3">
+                                  <Checkbox
+                                    id={`topic-${topic.id}`}
+                                    checked={topic.completed}
+                                    onCheckedChange={() => handleToggleTopic(phase.id, topic.id)}
+                                  />
+                                  <Label htmlFor={`topic-${topic.id}`} className={cn("text-sm cursor-pointer", topic.completed && "line-through text-muted-foreground")}>
+                                    {topic.text}
+                                  </Label>
+                                </div>
+                              ))}
                             </div>
-                        </div>
-                    </AccordionTrigger>
-                  <AccordionContent>
-                    <CardContent className="grid md:grid-cols-2 gap-x-8 gap-y-4 px-6 pb-6">
-                      {/* Topics Column */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold flex items-center gap-2"><List className="h-5 w-5 text-primary"/> Topics</h4>
-                        <div className="space-y-2">
-                          {phase.topics.map(topic => (
-                            <div key={topic.id} className="flex items-center gap-3">
-                              <Checkbox
-                                id={`topic-${topic.id}`}
-                                checked={topic.completed}
-                                onCheckedChange={() => handleToggleTopic(phase.id, topic.id)}
-                              />
-                              <Label htmlFor={`topic-${topic.id}`} className={cn("text-sm cursor-pointer", topic.completed && "line-through text-muted-foreground")}>
-                                {topic.text}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                          </div>
 
-                      {/* Practice Goal Column */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold flex items-center gap-2"><Target className="h-5 w-5 text-primary"/> Practice Goal</h4>
-                         <p className="text-sm text-muted-foreground">{phase.practiceGoal}</p>
-                         <div className="flex items-center gap-4 pt-2">
-                            <Slider
-                                value={[phase.problemsSolved]}
-                                max={phase.totalProblems}
-                                step={1}
-                                onValueChange={(value) => handleProblemsChange(phase.id, value[0])}
-                            />
-                            <span className="text-sm font-semibold w-24 text-right">{phase.problemsSolved} / {phase.totalProblems}</span>
-                         </div>
-                      </div>
+                          {/* Practice Goal Column */}
+                          <div className="space-y-3">
+                            <h4 className="font-semibold flex items-center gap-2"><Target className="h-5 w-5 text-primary"/> Practice Goal</h4>
+                             <p className="text-sm text-muted-foreground">{phase.practiceGoal}</p>
+                             <div className="flex items-center gap-4 pt-2">
+                                <Slider
+                                    value={[phase.problemsSolved]}
+                                    max={phase.totalProblems}
+                                    step={1}
+                                    onValueChange={(value) => handleProblemsChange(phase.id, value[0])}
+                                />
+                                <span className="text-sm font-semibold w-24 text-right">{phase.problemsSolved} / {phase.totalProblems}</span>
+                             </div>
+                          </div>
 
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
-            </div>
-          );
-        })}
-      </Accordion>
-       <div className="text-xs text-muted-foreground flex items-center gap-2 pl-12">
-            <Info className="h-4 w-4" />
-            <span>Your progress is saved automatically to this device.</span>
-       </div>
+                        </CardContent>
+                      </AccordionContent>
+                    </Card>
+                  </AccordionItem>
+                </div>
+              );
+            })}
+          </Accordion>
+           <div className="text-xs text-muted-foreground flex items-center gap-2 pl-12">
+                <Info className="h-4 w-4" />
+                <span>Your progress is saved automatically to this device.</span>
+           </div>
+        </div>
     </div>
   );
 }
