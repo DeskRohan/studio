@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import confetti from 'canvas-confetti';
 
 
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
@@ -63,6 +64,14 @@ export function RoadmapAccordion() {
       setRoadmap(defaultRoadmap);
     }
   }, []);
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
 
   const updateConsistencyAndStreak = useCallback((isProgress: boolean) => {
     if (!isProgress) return;
@@ -109,6 +118,9 @@ export function RoadmapAccordion() {
 
 
   const handleToggleTopic = (phaseId: number, topicId: number) => {
+    const oldPhaseState = roadmap.find(p => p.id === phaseId);
+    const wasPhaseCompletedBefore = oldPhaseState?.topics.every(t => t.completed) ?? false;
+
     const newRoadmap = roadmap.map((phase) => {
       if (phase.id === phaseId) {
         const newTopics = phase.topics.map((topic) =>
@@ -120,6 +132,17 @@ export function RoadmapAccordion() {
     });
     setRoadmap(newRoadmap);
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
+
+    const newPhaseState = newRoadmap.find(p => p.id === phaseId);
+    const isPhaseCompletedNow = newPhaseState?.topics.every(t => t.completed) ?? false;
+
+    if (isPhaseCompletedNow && !wasPhaseCompletedBefore) {
+        triggerConfetti();
+        toast({
+            title: "Phase Complete! 🎉",
+            description: `Awesome work on finishing ${newPhaseState?.title}. On to the next challenge!`,
+        });
+    }
 
     const isCompleted = !!newRoadmap.find(p => p.id === phaseId)?.topics.find(t => t.id === topicId)?.completed;
     updateConsistencyAndStreak(isCompleted);
@@ -160,8 +183,8 @@ export function RoadmapAccordion() {
     const completedCount = phase.topics.filter(t => t.completed).length;
     const totalCount = phase.topics.length;
     
-    if (completedCount === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };
     if (completedCount === totalCount) return { text: 'Completed', variant: 'default' as const };
+    if (completedCount === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };
     return { text: 'In Progress', variant: 'outline' as const };
   }
 
