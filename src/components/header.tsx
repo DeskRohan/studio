@@ -66,18 +66,32 @@ export function Header() {
       </nav>
       
       {/* Mobile Header */}
-       <div className="flex w-full items-center md:hidden">
+       <div className="flex w-full items-center justify-between md:hidden">
          <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold">
             <GraduationCap className="h-6 w-6 text-primary" />
             <span className="font-bold text-primary">NextGenSDE</span>
         </Link>
+        <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleLogout}>
+                            <LogOut className="h-5 w-5" />
+                            <span className="sr-only">Logout</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Logout</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
       </div>
 
 
-      <div className="flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <div className="ml-auto flex-1 sm:flex-initial">
-          <ThemeToggle />
-        </div>
+      <div className="hidden items-center gap-4 md:ml-auto md:flex md:gap-2 lg:gap-4">
+        <ThemeToggle />
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
