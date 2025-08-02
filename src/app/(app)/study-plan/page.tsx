@@ -1,13 +1,13 @@
-import { RoadmapTracker } from "@/components/study-plan/roadmap-tracker";
+import { RoadmapAccordion } from "@/components/study-plan/roadmap-accordion";
 
 export default function StudyPlanPage() {
   return (
     <div className="space-y-6">
        <div>
         <h1 className="text-3xl font-bold tracking-tight">My Study Roadmap</h1>
-        <p className="text-muted-foreground">Enter your roadmap below and track your progress topic by topic.</p>
+        <p className="text-muted-foreground">Track your progress topic by topic and phase by phase.</p>
       </div>
-      <RoadmapTracker />
+      <RoadmapAccordion />
     </div>
   );
 }
