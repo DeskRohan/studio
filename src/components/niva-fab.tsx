@@ -115,7 +115,7 @@ export function NivaFab() {
       </SheetTrigger>
       <SheetContent 
         side={isMobile ? 'bottom' : 'right'} 
-        className="sm:max-w-lg flex flex-col"
+        className="sm:max-w-lg flex flex-col h-full md:h-full md:max-h-full"
         onOpenAutoFocus={(e) => e.preventDefault()} // Prevents autofocus on the first input
       >
         <SheetHeader>
@@ -154,7 +154,7 @@ export function NivaFab() {
           </ScrollArea>
         </div>
 
-        <SheetFooter className="mt-auto pt-4">
+        <SheetFooter className="mt-auto pt-4 bg-background">
              <div className="w-full space-y-4">
                 <form onSubmit={handleSubmit}>
                     <Textarea
