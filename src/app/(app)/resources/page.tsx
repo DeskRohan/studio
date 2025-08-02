@@ -10,7 +10,7 @@ const resources = {
     { title: "Abdul Bari's Algorithms Playlist", url: "https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O", icon: Youtube, description: "Gold standard for understanding core algorithm concepts visually." },
   ],
   subjects: [
-    { title: "DBMS - CodeHelp by Babbar", url: "https://www.youtube.com/playlist?list=PLrL_PSQ6q062cD0vPMGYW_AIpNg6T0_Fq", icon: Youtube, description: "A comprehensive playlist covering all essential DBMS topics for interviews." },
+    { title: "DBMS by Riti Kumari", url: "https://www.youtube.com/playlist?list=PLrL_PSQ6q062cD0vPMGYW_AIpNg6T0_Fq", icon: Youtube, description: "A comprehensive playlist covering all essential DBMS topics for interviews." },
     { title: "Operating Systems - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGz9donHRrE9I3Mwn6XdP8p", icon: Youtube, description: "Clear and concise videos on all important OS concepts." },
     { title: "Computer Networks - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGFBD2-2joCpWOLUrDLvVV_", icon: Youtube, description: "The most popular and effective playlist for understanding Computer Networks." },
   ],
