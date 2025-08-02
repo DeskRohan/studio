@@ -188,9 +188,9 @@ export default function WelcomePage() {
                     </div>
                   </div>
                   
-                  <div className="w-full max-w-sm mx-auto">
+                  <div className="flex items-center justify-center">
                      {mode === 'welcome' && (
-                        <Card className="w-full h-full card-glow-effect flex flex-col justify-center">
+                        <Card className="w-full max-w-sm h-full card-glow-effect flex flex-col justify-center">
                             <CardHeader>
                                 <CardTitle className="text-2xl">Welcome!</CardTitle>
                                 <CardDescription>
@@ -210,7 +210,7 @@ export default function WelcomePage() {
                         </Card>
                      )}
                     {mode === 'login' && (
-                        <Card className="w-full h-full card-glow-effect">
+                        <Card className="w-full max-w-sm h-full card-glow-effect">
                             <CardHeader>
                                 <CardTitle className="text-2xl">Welcome Back!</CardTitle>
                                 <CardDescription>
@@ -246,7 +246,7 @@ export default function WelcomePage() {
                         </Card>
                     )}
                     {mode === 'setup' && (
-                        <Card className="w-full h-full card-glow-effect">
+                        <Card className="w-full max-w-sm h-full card-glow-effect">
                             <CardHeader>
                                 <CardTitle className="text-2xl">Let's Get Started</CardTitle>
                                 <CardDescription>
@@ -288,7 +288,7 @@ export default function WelcomePage() {
                     )}
 
                     {mode === 'setup-roadmap' && (
-                         <Card className="w-full h-full card-glow-effect flex flex-col">
+                         <Card className="w-full max-w-sm h-full card-glow-effect flex flex-col">
                             <CardHeader>
                                 <CardTitle className="text-2xl">Choose Your Path</CardTitle>
                                 <CardDescription>
