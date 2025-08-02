@@ -5,18 +5,17 @@ import { useState, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, Target, Flame, Quote } from "lucide-react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
 import { motivationalQuotes } from "@/lib/quotes";
+import { defaultRoadmap } from "@/lib/data";
 
 const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
   ssr: false,
   loading: () => <Skeleton className="h-96 col-span-1 lg:col-span-3" />,
 });
 
-
-const ROADMAP_DOC_ID = "dsa-roadmap-main";
+const ROADMAP_STORAGE_KEY = "dsa-roadmap-data";
+const STREAK_STORAGE_KEY = "user-streak-data";
 
 type RoadmapItem = {
   id: number;
@@ -29,6 +28,14 @@ type StreakData = {
     lastCompletedDate: string;
 }
 
+const getStreakBadge = (streak: number): { name: string; icon: string; level: number } => {
+  if (streak >= 30) return { name: "Samrat (Emperor)", icon: "👑", level: 4 };
+  if (streak >= 15) return { name: "Yodha (Warrior)", icon: "⚔️", level: 3 };
+  if (streak >= 7) return { name: "Sainik (Soldier)", icon: "🛡️", level: 2 };
+  if (streak >= 1) return { name: "Prarambhik (Beginner)", icon: "🌱", level: 1 };
+  return { name: "No Streak", icon: "✖️", level: 0 };
+};
+
 export default function DashboardPage() {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -38,35 +45,51 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState("Rohan");
 
   useEffect(() => {
+    // Quote of the day
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
     setQuote(motivationalQuotes[quoteIndex]);
 
-    const roadmapDocRef = doc(db, "roadmaps", ROADMAP_DOC_ID);
-    const streakDocRef = doc(db, "streaks", "user-streak");
+    // Load Roadmap from localStorage
+    const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
+    const roadmapItems: RoadmapItem[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap.map(item => ({ ...item, completed: false }));
+    const topicItems = roadmapItems.filter(item => !item.text.startsWith("#"));
+    setCompletedCount(topicItems.filter(item => item.completed).length);
+    setTotalCount(topicItems.length);
 
-    const unsubRoadmap = onSnapshot(roadmapDocRef, (doc) => {
-      if (doc.exists()) {
-        const items = doc.data().items as RoadmapItem[];
-        const topicItems = items.filter(item => !item.text.startsWith("#"));
-        setCompletedCount(topicItems.filter(item => item.completed).length);
-        setTotalCount(topicItems.length);
-      }
-      setIsLoading(false);
-    });
+    // Load Streak from localStorage
+    const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
+    const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
+    setStreak(streakData.count);
 
-    const unsubStreak = onSnapshot(streakDocRef, (doc) => {
-        if(doc.exists()) {
-            setStreak((doc.data() as StreakData).count);
+    setIsLoading(false);
+
+    // Listen for changes from other tabs
+     const handleStorageChange = () => {
+        const updatedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
+        if (updatedRoadmap) {
+             const newItems: RoadmapItem[] = JSON.parse(updatedRoadmap);
+             const newTopicItems = newItems.filter(item => !item.text.startsWith("#"));
+             setCompletedCount(newTopicItems.filter(item => item.completed).length);
+             setTotalCount(newTopicItems.length);
         }
-    });
+
+        const updatedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
+        if (updatedStreak) {
+            const newStreakData: StreakData = JSON.parse(updatedStreak);
+            setStreak(newStreakData.count);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      unsubRoadmap();
-      unsubStreak();
-    };
+        window.removeEventListener('storage', handleStorageChange);
+    }
+
   }, []);
 
   const remainingCount = totalCount - completedCount;
+  const streakBadge = getStreakBadge(streak);
 
   return (
     <div className="space-y-6">
@@ -116,19 +139,35 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
               </CardContent>
             </Card>
-            <Card className="card-glow-effect">
+             <Card className="card-glow-effect">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Daily Quote</CardTitle>
-                <Quote className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Streak Badge</CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm italic">"{quote}"</p>
+                <div className="text-2xl font-bold flex items-center gap-2">
+                    <span>{streakBadge.icon}</span>
+                    <span>{streakBadge.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{streak > 0 ? `Level ${streakBadge.level} Achievement` : "Start a streak to earn a badge!"}</p>
               </CardContent>
             </Card>
           </>
         )}
       </div>
-      <OverviewChart completed={completedCount} remaining={remainingCount} />
+       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <OverviewChart completed={completedCount} remaining={remainingCount} />
+             <Card className="lg:col-span-1 card-glow-effect">
+              <CardHeader>
+                <CardTitle>Daily Quote</CardTitle>
+                 <CardDescription>A little motivation for your day.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center gap-4">
+                 <Quote className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+                 <p className="text-sm italic">"{quote}"</p>
+              </CardContent>
+            </Card>
+       </div>
     </div>
   );
 }

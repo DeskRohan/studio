@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -30,7 +31,7 @@ export function OverviewChart({ completed, remaining }: { completed: number; rem
     const completedPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <Card className="col-span-1 lg:col-span-3">
+    <Card className="col-span-1 lg:col-span-3 card-glow-effect">
       <CardHeader>
         <CardTitle>Progress Overview</CardTitle>
         <CardDescription>Your total progress across the entire roadmap.</CardDescription>

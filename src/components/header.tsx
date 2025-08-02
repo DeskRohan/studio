@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -17,13 +18,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Crown, Mic } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Mic, Library } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
+  { href: "/resources", icon: Library, label: "Resources" },
   { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
   { href: "/ai-interviewer", icon: Mic, label: "AI Interviewer" },
   { href: "/architect", icon: User, label: "The Architect" },
