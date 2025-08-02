@@ -46,6 +46,12 @@ type StreakData = {
     lastCompletedDate: string;
 }
 
+const checkPhaseCompletion = (phase: RoadmapPhase) => {
+    const allTopicsDone = phase.topics.every(t => t.completed);
+    const allProblemsDone = phase.problemsSolved === phase.totalProblems;
+    return allTopicsDone && allProblemsDone;
+}
+
 export function RoadmapAccordion() {
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [activeAccordion, setActiveAccordion] = useState<string>('phase-1');
@@ -67,8 +73,8 @@ export function RoadmapAccordion() {
 
   const triggerConfetti = () => {
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 150,
+      spread: 90,
       origin: { y: 0.6 }
     });
   }
@@ -117,9 +123,11 @@ export function RoadmapAccordion() {
   }, [toast]);
 
 
-  const handleToggleTopic = (phaseId: number, topicId: number) => {
+ const handleToggleTopic = (phaseId: number, topicId: number) => {
     const oldPhaseState = roadmap.find(p => p.id === phaseId);
-    const wasPhaseCompletedBefore = oldPhaseState?.topics.every(t => t.completed) ?? false;
+    if (!oldPhaseState) return;
+
+    const wasPhaseCompletedBefore = checkPhaseCompletion(oldPhaseState);
 
     const newRoadmap = roadmap.map((phase) => {
       if (phase.id === phaseId) {
@@ -130,42 +138,62 @@ export function RoadmapAccordion() {
       }
       return phase;
     });
+    
     setRoadmap(newRoadmap);
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
 
-    const newPhaseState = newRoadmap.find(p => p.id === phaseId);
-    const isPhaseCompletedNow = newPhaseState?.topics.every(t => t.completed) ?? false;
+    const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
+    const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
 
     if (isPhaseCompletedNow && !wasPhaseCompletedBefore) {
         triggerConfetti();
         toast({
             title: "Phase Complete! 🎉",
-            description: `Awesome work on finishing ${newPhaseState?.title}. On to the next challenge!`,
+            description: `Awesome work on finishing ${newPhaseState.title}. On to the next challenge!`,
         });
     }
 
-    const isCompleted = !!newRoadmap.find(p => p.id === phaseId)?.topics.find(t => t.id === topicId)?.completed;
+    const isCompleted = !!newPhaseState.topics.find(t => t.id === topicId)?.completed;
     updateConsistencyAndStreak(isCompleted);
     
-    // Always dispatch storage event to update dashboard
     window.dispatchEvent(new Event('storage'));
   };
 
   const handleProblemsChange = (phaseId: number, newCount: number) => {
+     const oldPhaseState = roadmap.find(p => p.id === phaseId);
+     if (!oldPhaseState) return;
+
+     const wasPhaseCompletedBefore = checkPhaseCompletion(oldPhaseState);
+     const isProgress = newCount > oldPhaseState.problemsSolved;
+
      const newRoadmap = roadmap.map((phase) => {
       if (phase.id === phaseId) {
-        // Only trigger streak logic if user is making forward progress
-        if (newCount > phase.problemsSolved) {
-            updateConsistencyAndStreak(true);
-        }
         return { ...phase, problemsSolved: newCount };
       }
       return phase;
     });
+
     setRoadmap(newRoadmap);
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
+
+    if (isProgress) {
+        updateConsistencyAndStreak(true);
+    }
+    
+    const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
+    const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
+
+    if (isPhaseCompletedNow && !wasPhaseCompletedBefore) {
+        triggerConfetti();
+        toast({
+            title: "Phase Complete! 🎉",
+            description: `Awesome work on finishing ${newPhaseState.title}. On to the next challenge!`,
+        });
+    }
+
     window.dispatchEvent(new Event('storage'));
   }
+
 
   const handleResetProgress = () => {
     setRoadmap(defaultRoadmap);
@@ -180,11 +208,11 @@ export function RoadmapAccordion() {
   }
 
   const getPhaseStatus = (phase: RoadmapPhase) => {
-    const completedCount = phase.topics.filter(t => t.completed).length;
-    const totalCount = phase.topics.length;
+    const completedTopics = phase.topics.filter(t => t.completed).length;
+    const totalTopics = phase.topics.length;
     
-    if (completedCount === totalCount) return { text: 'Completed', variant: 'default' as const };
-    if (completedCount === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };
+    if (checkPhaseCompletion(phase)) return { text: 'Completed', variant: 'default' as const };
+    if (completedTopics === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };
     return { text: 'In Progress', variant: 'outline' as const };
   }
 
@@ -220,7 +248,7 @@ export function RoadmapAccordion() {
             value={activeAccordion}
             onValueChange={setActiveAccordion}
         >
-        {roadmap.map((phase, index) => {
+        {roadmap.map((phase) => {
           const completedTopics = phase.topics.filter(t => t.completed).length;
           const totalTopics = phase.topics.length;
           const phaseProgress = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
@@ -276,7 +304,6 @@ export function RoadmapAccordion() {
                          <p className="text-sm text-muted-foreground">{phase.practiceGoal}</p>
                          <div className="flex items-center gap-4 pt-2">
                             <Slider
-                                defaultValue={[phase.problemsSolved]}
                                 value={[phase.problemsSolved]}
                                 max={phase.totalProblems}
                                 step={1}
