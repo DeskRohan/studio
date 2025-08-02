@@ -98,25 +98,33 @@ export function MobileNav() {
     const pathname = usePathname();
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
-            <div className="bg-background/95 backdrop-blur-sm border-t p-2">
-                <nav className="grid grid-cols-6 items-center justify-around gap-1">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1 rounded-md p-2 transition-colors",
-                                pathname.startsWith(item.href)
-                                ? "bg-primary/10 text-primary font-semibold"
-                                : "text-muted-foreground hover:bg-muted"
-                            )}
-                        >
-                            <item.icon className="h-5 w-5" />
-                            <span className="hidden xs:block text-[10px] leading-none text-center">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav>
+        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
+            <div className="border-t bg-background/95 p-2 backdrop-blur-sm">
+                <TooltipProvider>
+                    <nav className="grid grid-cols-6 items-center justify-around gap-1">
+                        {navItems.map((item) => (
+                            <Tooltip key={item.href}>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href={item.href}
+                                        className={cn(
+                                            "flex flex-col items-center justify-center gap-1 rounded-md p-2 transition-colors",
+                                            pathname.startsWith(item.href)
+                                            ? "bg-primary/10 text-primary font-semibold"
+                                            : "text-muted-foreground hover:bg-muted"
+                                        )}
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                        <span className="hidden text-center text-[10px] leading-none xs:block">{item.label}</span>
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="mb-2 block xs:hidden">
+                                    <p>{item.label}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ))}
+                    </nav>
+                </TooltipProvider>
             </div>
         </div>
     );
