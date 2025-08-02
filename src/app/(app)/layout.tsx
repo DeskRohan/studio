@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header, MobileNav } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { GyanuFab } from '@/components/gyanu-fab';
 
 
 export default function AppLayout({
@@ -29,6 +30,7 @@ export default function AppLayout({
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
+      <GyanuFab />
       {isMobile && <MobileNav />}
       <div className="hidden md:block">
         <Footer />

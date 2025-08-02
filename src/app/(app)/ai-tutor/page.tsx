@@ -35,9 +35,9 @@ export default function AiTutorPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">AI Tutor</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Gyanu: Your AI Doubt Solver</h1>
         <p className="text-muted-foreground">
-          Have a quick question about a DSA concept? Ask the AI Tutor.
+          Have a quick question about a DSA concept? Ask Gyanu.
         </p>
       </div>
 
