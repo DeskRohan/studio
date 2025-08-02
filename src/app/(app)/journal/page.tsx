@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -11,24 +11,27 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const JOURNAL_DOC_ID = 'user-journal';
+type SaveStatus = 'unsaved' | 'saving' | 'saved';
 
 export default function JournalPage() {
   const [entry, setEntry] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const { toast } = useToast();
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const getJournalDocRef = useCallback(() => {
     return doc(db, 'journal', JOURNAL_DOC_ID);
   }, []);
 
+  // Effect for initial loading of the journal
   useEffect(() => {
     const docRef = getJournalDocRef();
     const unsubscribe = onSnapshot(
@@ -53,15 +56,12 @@ export default function JournalPage() {
     return () => unsubscribe();
   }, [getJournalDocRef, toast]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleSave = useCallback(async (currentEntry: string) => {
+    setSaveStatus('saving');
     const docRef = getJournalDocRef();
     try {
-      await setDoc(docRef, { entry: entry }, { merge: true });
-      toast({
-        title: 'Saved!',
-        description: 'Your journal entry has been saved.',
-      });
+      await setDoc(docRef, { entry: currentEntry }, { merge: true });
+      setSaveStatus('saved');
     } catch (error) {
       console.error('Error saving journal:', error);
       toast({
@@ -69,10 +69,49 @@ export default function JournalPage() {
         description: 'Could not save your journal entry.',
         variant: 'destructive',
       });
-    } finally {
-      setIsSaving(false);
+      setSaveStatus('unsaved');
     }
-  };
+  }, [getJournalDocRef, toast]);
+  
+  // Effect for auto-saving with debounce
+  useEffect(() => {
+    if (isLoading) return; // Don't save while loading initial data
+    if (saveStatus === 'saved') return; // Don't trigger save if already saved
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+        handleSave(entry);
+    }, 1500); // 1.5-second debounce delay
+
+    return () => {
+        if(debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+    }
+
+  }, [entry, isLoading, handleSave, saveStatus]);
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setSaveStatus('unsaved');
+    setEntry(e.target.value);
+  }
+
+  const getStatusIndicator = () => {
+    switch(saveStatus) {
+        case 'saving':
+            return <span className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="animate-spin h-4 w-4" />Saving...</span>;
+        case 'saved':
+            return <span className="flex items-center gap-2 text-sm text-green-600"><CheckCircle className="h-4 w-4" />Saved</span>;
+        case 'unsaved':
+             return <span className="flex items-center gap-2 text-sm text-muted-foreground">Editing...</span>;
+        default:
+            return null;
+    }
+  }
+
 
   return (
     <div className="space-y-6">
@@ -97,21 +136,14 @@ export default function JournalPage() {
             <Textarea
               placeholder="Start writing..."
               value={entry}
-              onChange={(e) => setEntry(e.target.value)}
+              onChange={handleTextChange}
               rows={12}
-              disabled={isSaving}
+              disabled={isLoading}
             />
           )}
         </CardContent>
-        <CardFooter>
-          <Button onClick={handleSave} disabled={isSaving || isLoading}>
-            {isSaving ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Save Entry
-          </Button>
+        <CardFooter className="justify-between">
+           {!isLoading && getStatusIndicator()}
         </CardFooter>
       </Card>
     </div>
