@@ -22,6 +22,7 @@ import { defaultRoadmap, RoadmapPhase } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Slider } from '@/components/ui/slider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,6 +129,18 @@ export function RoadmapAccordion() {
         window.dispatchEvent(new Event('storage'));
     }
   };
+
+  const handleProblemsChange = (phaseId: number, newCount: number) => {
+     const newRoadmap = roadmap.map((phase) => {
+      if (phase.id === phaseId) {
+        return { ...phase, problemsSolved: newCount };
+      }
+      return phase;
+    });
+    setRoadmap(newRoadmap);
+    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
+    window.dispatchEvent(new Event('storage'));
+  }
 
   const handleResetProgress = () => {
     setRoadmap(defaultRoadmap);
@@ -236,10 +249,15 @@ export function RoadmapAccordion() {
                       <div className="space-y-3">
                         <h4 className="font-semibold flex items-center gap-2"><Target className="h-5 w-5 text-primary"/> Practice Goal</h4>
                          <p className="text-sm text-muted-foreground">{phase.practiceGoal}</p>
-                         <div className="flex items-center gap-3">
-                            <Progress value={(phase.problemsSolved / phase.totalProblems) * 100} className="h-3" />
+                         <div className="flex items-center gap-4 pt-2">
+                            <Slider
+                                defaultValue={[phase.problemsSolved]}
+                                max={phase.totalProblems}
+                                step={1}
+                                onValueChange={(value) => handleProblemsChange(phase.id, value[0])}
+                            />
+                            <span className="text-sm font-semibold w-24 text-right">{phase.problemsSolved} / {phase.totalProblems}</span>
                          </div>
-                         <p className="text-sm font-semibold">{phase.problemsSolved} / {phase.totalProblems} problems</p>
                       </div>
 
                     </CardContent>
