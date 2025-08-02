@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info, LogIn, Wand2, Star, CheckCircle } from 'lucide-react';
+import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info, LogIn, Wand2, Star, CheckCircle, User } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
 import {
@@ -24,6 +24,7 @@ import {
 import { defaultRoadmap } from '@/lib/data';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
 import type { RoadmapPhase } from '@/lib/data';
+import { SetupAnimation } from '@/components/setup-animation';
 
 
 const USER_DATA_KEY = 'user-profile-data';
@@ -39,6 +40,7 @@ export default function WelcomePage() {
   const [timeline, setTimeline] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -136,6 +138,7 @@ export default function WelcomePage() {
     const userData = { name: name.trim(), passcode: newPasscode };
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
     sessionStorage.setItem(AUTH_KEY, 'true');
+    setIsNewUser(true);
     setIsUnlocked(true);
     setTimeout(() => router.push('/dashboard'), 2500);
   }
@@ -146,8 +149,12 @@ export default function WelcomePage() {
   }
 
 
-    if (isUnlocked || mode === 'loading') {
-        return <SplashScreen />;
+    if (isUnlocked) {
+        return isNewUser ? <SetupAnimation /> : <SplashScreen />;
+    }
+    
+    if (mode === 'loading') {
+        return <SplashScreen />
     }
 
   return (
@@ -172,7 +179,7 @@ export default function WelcomePage() {
                         Your personalized roadmap to success. Track your progress, get AI-powered help, and stay motivated on your journey to your dream job.
                       </p>
                     </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-2">
                             <BrainCircuit className="h-5 w-5 text-primary" />
                             <span>AI-Powered Features</span>
