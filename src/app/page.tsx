@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info, LogIn } from 'lucide-react';
+import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info, LogIn, Wand2, Star, CheckCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
 import {
@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { defaultRoadmap } from '@/lib/data';
+import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
+import type { RoadmapPhase } from '@/lib/data';
 
 
 const USER_DATA_KEY = 'user-profile-data';
@@ -30,10 +32,11 @@ const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 
 export default function WelcomePage() {
-  const [mode, setMode] = useState<'loading' | 'welcome' | 'login' | 'setup'>('loading');
+  const [mode, setMode] = useState<'loading' | 'welcome' | 'login' | 'setup' | 'setup-roadmap'>('loading');
   const [passcode, setPasscode] = useState('');
   const [name, setName] = useState('');
   const [newPasscode, setNewPasscode] = useState('');
+  const [timeline, setTimeline] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
@@ -85,7 +88,7 @@ export default function WelcomePage() {
     }, 500);
   };
 
-  const handleSetup = (e: React.FormEvent) => {
+  const handleSetupDetails = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPasscode.length !== 4 || !/^\d{4}$/.test(newPasscode)) {
         toast({ title: "Invalid Passcode", description: "Passcode must be exactly 4 digits.", variant: "destructive" });
@@ -95,22 +98,51 @@ export default function WelcomePage() {
         toast({ title: "Invalid Name", description: "Please enter your name.", variant: "destructive" });
         return;
     }
-
     setShowPrivacyDialog(true);
   }
 
-  const confirmSetup = () => {
+  const handleUseExpertRoadmap = () => {
+    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
+    finishSetup();
+  }
+
+  const handleGenerateCustomRoadmap = async () => {
+    if (!timeline.trim()) {
+        toast({ title: 'Timeline Required', description: 'Please enter your timeline to generate a plan.', variant: 'destructive' });
+        return;
+    }
     setIsLoading(true);
+     try {
+        const response = await generateCustomRoadmap({ timeline });
+        if (response.roadmap && response.roadmap.length > 0) {
+            localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(response.roadmap));
+            finishSetup();
+        } else {
+             throw new Error("AI returned an empty or invalid roadmap.");
+        }
+    } catch (err) {
+        console.error(err);
+        toast({
+            title: 'Generation Failed',
+            description: 'Could not generate roadmap. The AI might be busy. Please try again or use the expert roadmap.',
+            variant: 'destructive'
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  const finishSetup = () => {
     const userData = { name: name.trim(), passcode: newPasscode };
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-
-    if (newPasscode === '218701') {
-        localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
-    }
-
     sessionStorage.setItem(AUTH_KEY, 'true');
     setIsUnlocked(true);
     setTimeout(() => router.push('/dashboard'), 2500);
+  }
+
+  const confirmPrivacy = () => {
+    setMode('setup-roadmap');
+    setShowPrivacyDialog(false);
   }
 
 
@@ -221,7 +253,7 @@ export default function WelcomePage() {
                                     Create your local profile to begin your journey.
                                 </CardDescription>
                             </CardHeader>
-                            <form onSubmit={handleSetup}>
+                            <form onSubmit={handleSetupDetails}>
                                 <CardContent className="grid gap-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">Your Name</Label>
@@ -242,9 +274,9 @@ export default function WelcomePage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter className="flex flex-col gap-2">
-                                    <Button type="submit" className="w-full" disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                        Create Profile
+                                    <Button type="submit" className="w-full">
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        Next: Choose Roadmap
                                     </Button>
                                      <p className="text-xs text-muted-foreground flex items-center gap-1.5 text-center mt-2">
                                         <Info className="h-4 w-4 shrink-0" />
@@ -252,6 +284,47 @@ export default function WelcomePage() {
                                      </p>
                                 </CardFooter>
                             </form>
+                        </Card>
+                    )}
+
+                    {mode === 'setup-roadmap' && (
+                         <Card className="w-full h-full card-glow-effect">
+                            <CardHeader>
+                                <CardTitle className="text-2xl">Choose Your Path</CardTitle>
+                                <CardDescription>
+                                    Select a roadmap to start your preparation journey.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <Button onClick={handleUseExpertRoadmap} variant="secondary" className="w-full h-auto text-left flex flex-col items-start p-4 gap-1">
+                                    <div className="flex items-center gap-2 font-bold">
+                                        <Star className="h-5 w-5 text-primary"/>
+                                        <span>Use Expert's 9-Month Roadmap</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground pl-7">A comprehensive, battle-tested plan for placements.</p>
+                                </Button>
+                                
+                                <div className="text-sm text-center text-muted-foreground">OR</div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="timeline" className="flex items-center gap-2 font-bold">
+                                        <Wand2 className="h-5 w-5 text-primary"/>
+                                        Generate a Custom Plan
+                                    </Label>
+                                     <Input
+                                        id="timeline"
+                                        placeholder="e.g., 3 months, 6 weeks..."
+                                        value={timeline}
+                                        onChange={(e) => setTimeline(e.target.value)}
+                                    />
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleGenerateCustomRoadmap} disabled={isLoading || !timeline.trim()} className="w-full">
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                    {isLoading ? 'Generating Your Plan...' : 'Generate with AI'}
+                                </Button>
+                            </CardFooter>
                         </Card>
                     )}
                   </div>
@@ -271,7 +344,7 @@ export default function WelcomePage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmSetup}>I Understand, Continue</AlertDialogAction>
+              <AlertDialogAction onClick={confirmPrivacy}>I Understand, Continue</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
