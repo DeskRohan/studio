@@ -209,8 +209,8 @@ export function RoadmapAccordion() {
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
     window.dispatchEvent(new Event('storage'));
     toast({
-      title: "Default Roadmap Restored",
-      description: "The expert's default roadmap has been applied.",
+      title: "Expert Roadmap Restored",
+      description: "The expert's roadmap for placements has been applied.",
     });
   }
 
@@ -251,12 +251,12 @@ export function RoadmapAccordion() {
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <RefreshCcw className="mr-2 h-4 w-4" />
-                  Restore Default
+                  Expert's Roadmap for Placement
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Restore the Default Roadmap?</AlertDialogTitle>
+                  <AlertDialogTitle>Restore the Expert's Roadmap?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will replace your current roadmap and progress with the expert-curated default roadmap. This action cannot be undone.
                   </AlertDialogDescription>
