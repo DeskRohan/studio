@@ -62,39 +62,34 @@ export function RoadmapTracker() {
       const streakDocRef = getStreakDocRef();
       
       try {
-        // 1. Fetch initial roadmap data
         const docSnap = await getDoc(roadmapDocRef);
 
-        if (docSnap.exists()) {
-          setRoadmapItems(docSnap.data().items as RoadmapItem[]);
-        } else {
-          // If it doesn't exist, create it with default values
+        if (!docSnap.exists()) {
           const newItems = defaultRoadmap.map(item => ({ ...item, completed: false }));
           await setDoc(roadmapDocRef, { items: newItems });
-          setRoadmapItems(newItems);
         }
 
-        // 2. Fetch initial streak data
         const streakSnap = await getDoc(streakDocRef);
         if (!streakSnap.exists()) {
             await setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
         }
       } catch (error) {
-        console.error("Error fetching initial data:", error);
-        toast({ title: "Error", description: "Could not load your data. Please refresh.", variant: "destructive" });
-      } finally {
+        console.error("Error initializing data:", error);
+        toast({ title: "Error", description: "Could not initialize your data. Please check your connection and refresh.", variant: "destructive" });
         setIsLoading(false);
+        return; 
       }
 
-      // 3. Now, set up listeners for real-time updates
       const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (doc) => {
         if (doc.exists()) {
           setRoadmapItems(doc.data().items as RoadmapItem[]);
         }
+        setIsLoading(false);
+      }, (error) => {
+        console.error("Error with roadmap listener:", error);
+        toast({ title: "Error", description: "Could not load your roadmap data in real-time.", variant: "destructive" });
+        setIsLoading(false);
       });
-      
-      // We don't need a real-time listener for streak data on this page,
-      // as it's only updated on save.
       
       return () => {
         unsubscribeRoadmap();
@@ -110,29 +105,33 @@ export function RoadmapTracker() {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
 
-    const streakSnap = await getDoc(streakDocRef);
-    const streakData = (streakSnap.data() as StreakData) || { count: 0, lastCompletedDate: "" };
+    try {
+        const streakSnap = await getDoc(streakDocRef);
+        const streakData = (streakSnap.data() as StreakData) || { count: 0, lastCompletedDate: "" };
 
-    if (streakData.lastCompletedDate === todayStr) {
-      return; // Already updated today
-    }
-    
-    let newStreakCount = 1;
-    let toastMessage = "You've started a new streak! 🔥";
-    if (streakData.lastCompletedDate) {
-        const lastDate = new Date(streakData.lastCompletedDate);
-        if (format(lastDate, 'yyyy-MM-dd') === format(subDays(today, 1), 'yyyy-MM-dd')) {
-            newStreakCount = streakData.count + 1;
-            toastMessage = `Streak extended to ${newStreakCount} days! Keep it up! 🎉`;
+        if (streakData.lastCompletedDate === todayStr) {
+          return; // Already updated today
         }
+        
+        let newStreakCount = 1;
+        let toastMessage = "You've started a new streak! 🔥";
+        if (streakData.lastCompletedDate) {
+            const lastDate = new Date(streakData.lastCompletedDate);
+            if (format(lastDate, 'yyyy-MM-dd') === format(subDays(today, 1), 'yyyy-MM-dd')) {
+                newStreakCount = streakData.count + 1;
+                toastMessage = `Streak extended to ${newStreakCount} days! Keep it up! 🎉`;
+            }
+        }
+        
+        const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
+        await setDoc(streakDocRef, newStreakData);
+        toast({
+            title: "Progress!",
+            description: toastMessage,
+        });
+    } catch(e) {
+        console.error("Could not update streak", e);
     }
-    
-    const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-    await setDoc(streakDocRef, newStreakData);
-    toast({
-        title: "Progress!",
-        description: toastMessage,
-    });
   }
 
   const handleToggleComplete = (id: number) => {
@@ -152,20 +151,21 @@ export function RoadmapTracker() {
     try {
         await setDoc(docRef, { items: roadmapItems }, { merge: true });
 
-        const hasCompletedTopic = roadmapItems.some(item => item.completed);
+        const hasCompletedTopic = roadmapItems.some(item => !item.text.startsWith('#') && item.completed);
+
         if(hasCompletedTopic) {
             await updateStreak();
         }
 
         toast({
             title: "Progress Saved",
-            description: "Your roadmap has been successfully saved across all devices.",
+            description: "Your roadmap has been successfully saved.",
         });
     } catch (error) {
         console.error("Error saving roadmap:", error);
         toast({
             title: "Error",
-            description: "Could not save your progress.",
+            description: "Could not save your progress. Please check your connection.",
             variant: "destructive",
         });
     } finally {
@@ -177,16 +177,16 @@ export function RoadmapTracker() {
   const handleResetProgress = async () => {
     const docRef = getRoadmapDocRef();
     const streakDocRef = getStreakDocRef();
-    if (!docRef || !streakDocRef) return;
 
     const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
 
     try {
         await setDoc(docRef, { items: newItems });
         await setDoc(streakDocRef, { count: 0, lastCompletedDate: ""});
+        setRoadmapItems(newItems);
         toast({
             title: "Progress Reset",
-            description: "Your roadmap progress and streak have been successfully reset.",
+            description: "Your roadmap progress and streak have been reset.",
         })
     } catch(error) {
         toast({
@@ -284,7 +284,7 @@ export function RoadmapTracker() {
       <CardFooter>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span>Your progress is synced from the database. Click Save to update.</span>
+            <span>Click Save to update your progress.</span>
           </div>
       </CardFooter>
     </Card>
