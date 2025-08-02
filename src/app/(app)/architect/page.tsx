@@ -18,6 +18,7 @@ export default function ArchitectPage() {
       <Card className="w-full max-w-2xl card-glow-effect">
         <CardHeader className="items-center text-center">
             <Avatar className="h-24 w-24 mb-4">
+                <AvatarImage src="https://github.com/rohan-godakhindi.png" alt="Rohan Godakhindi" />
                 <AvatarFallback>
                     <User className="h-12 w-12" />
                 </AvatarFallback>

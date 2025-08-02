@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Youtube, Book, Laptop, Rocket } from "lucide-react";
 import Link from "next/link";
+import { Recommendations } from "@/components/resources/recommendations";
+
 
 const resources = {
   dsa: [
@@ -49,9 +51,11 @@ export default function ResourcesPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Curated Resources</h1>
         <p className="text-muted-foreground">
-          A handpicked list of the best free resources to supercharge your preparation.
+          Handpicked resources and AI-powered recommendations to supercharge your preparation.
         </p>
       </div>
+
+      <Recommendations />
       
       <section>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Data Structures & Algorithms</h2>

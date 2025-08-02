@@ -1,0 +1,149 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Sparkles, Lightbulb, BookOpen, AlertTriangle } from 'lucide-react';
+import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
+import type { RoadmapPhase } from '@/lib/data';
+
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+
+type Recommendation = {
+    topic: string;
+    recommendation: string;
+};
+
+export function Recommendations() {
+    const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const findWeakestTopics = () => {
+        try {
+            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
+            if (!savedRoadmap) return [];
+
+            const roadmap: RoadmapPhase[] = JSON.parse(savedRoadmap);
+            const topicProgress: { [key: string]: { completed: number, total: number } } = {};
+
+            const topicKeywords = [
+                'Arrays', 'Hashing', 'Binary Search', 'Recursion', 'Linked Lists', 'Stack', 'Queue',
+                'Sliding Window', 'Trees', 'BST', 'Graphs', 'Heap', 'Trie', 'DP', 'Dynamic Programming'
+            ];
+
+            // Initialize progress for all topics
+            topicKeywords.forEach(keyword => {
+                topicProgress[keyword] = { completed: 0, total: 0 };
+            });
+            
+            // Aggregate progress
+            roadmap.forEach(phase => {
+                phase.topics.forEach(topic => {
+                    const matchedKeyword = topicKeywords.find(keyword => topic.text.toLowerCase().includes(keyword.toLowerCase()));
+                    if (matchedKeyword) {
+                        topicProgress[matchedKeyword].total++;
+                        if (topic.completed) {
+                            topicProgress[matchedKeyword].completed++;
+                        }
+                    }
+                });
+            });
+
+            // Calculate completion percentage and find weakest
+            const percentages = Object.entries(topicProgress)
+                .filter(([, data]) => data.total > 0)
+                .map(([topic, data]) => ({
+                    topic,
+                    percentage: (data.completed / data.total) * 100,
+                }));
+            
+            percentages.sort((a, b) => a.percentage - b.percentage);
+            
+            return percentages.slice(0, 3).map(p => p.topic);
+
+        } catch (e) {
+            console.error("Failed to analyze roadmap progress:", e);
+            return [];
+        }
+    };
+    
+    const fetchRecommendations = async () => {
+        const weakestTopics = findWeakestTopics();
+        if (weakestTopics.length === 0) {
+            setError("Could not determine weakest topics. Complete some roadmap items first!");
+            return;
+        }
+
+        setIsLoading(true);
+        setError('');
+        setRecommendations([]);
+
+        try {
+            const response = await getLearningRecommendations({ topics: weakestTopics });
+            setRecommendations(response.recommendations);
+        } catch (err) {
+            console.error(err);
+            setError('Could not fetch AI recommendations. Please check your API key and try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <section>
+            <Card className="bg-secondary/50 dark:bg-secondary/20 border-primary/20 card-glow-effect">
+                <CardHeader>
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Sparkles className="h-6 w-6 text-primary" />
+                                <span>AI-Powered Recommendations</span>
+                            </CardTitle>
+                            <CardDescription className="mt-2">
+                                Based on your roadmap progress, here are some personalized suggestions to focus on.
+                            </CardDescription>
+                        </div>
+                        <Button onClick={fetchRecommendations} disabled={isLoading}>
+                             {isLoading ? 'Analyzing...' : 'Get Suggestions'}
+                        </Button>
+                    </div>
+                </CardHeader>
+                 {(isLoading || recommendations.length > 0 || error) && (
+                    <CardContent>
+                        {isLoading && (
+                            <div className="space-y-4">
+                                <Skeleton className="h-8 w-1/3" />
+                                <Skeleton className="h-6 w-full" />
+                                <Skeleton className="h-6 w-3/4" />
+                            </div>
+                        )}
+                        {error && (
+                             <div className="flex items-center gap-2 text-destructive font-medium">
+                                <AlertTriangle className="h-5 w-5" />
+                                <p>{error}</p>
+                            </div>
+                        )}
+                        {recommendations.length > 0 && (
+                            <div className="space-y-6">
+                                {recommendations.map((rec, index) => (
+                                    <div key={index} className="flex items-start gap-4">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0 mt-1">
+                                            <Lightbulb className="h-5 w-5"/>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-primary">{rec.topic}</h4>
+                                            <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: rec.recommendation.replace(/\n/g, '<br />') }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                )}
+            </Card>
+        </section>
+    );
+}
