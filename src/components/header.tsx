@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Mic, Library, Rocket, Home } from "lucide-react";
+import { LogOut, User, MessageSquare, GraduationCap, Mic, Library, Rocket, Home } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +22,7 @@ const navItems = [
   { href: "/resources", icon: Library, label: "Resources" },
   { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
   { href: "/ai-interviewer", icon: Mic, label: "AI Interviewer" },
+  { href: "/architect", icon: User, label: "Architect" },
 ];
 
 const desktopNavItems = [
@@ -36,7 +36,6 @@ const desktopNavItems = [
 
 export function Header() {
   const router = useRouter();
-  const pathname = usePathname();
 
   const handleLogout = () => {
     sessionStorage.removeItem('authenticated');
@@ -57,7 +56,7 @@ export function Header() {
             href={item.href}
             className={cn(
               "transition-colors hover:text-foreground",
-              pathname === item.href ? "text-foreground font-semibold" : "text-muted-foreground"
+              usePathname() === item.href ? "text-foreground font-semibold" : "text-muted-foreground"
             )}
           >
             {item.label}
@@ -106,7 +105,7 @@ export function MobileNav() {
     return (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
             <div className="bg-background/95 backdrop-blur-sm border-t p-2">
-                <nav className="grid grid-cols-5 items-center justify-around gap-1">
+                <nav className="grid grid-cols-6 items-center justify-around gap-1">
                     {navItems.map((item) => (
                         <Link
                             key={item.href}
@@ -119,7 +118,7 @@ export function MobileNav() {
                             )}
                         >
                             <item.icon className="h-5 w-5" />
-                            <span className="text-[10px] leading-none">{item.label}</span>
+                            <span className="text-[10px] leading-none text-center">{item.label}</span>
                         </Link>
                     ))}
                 </nav>
