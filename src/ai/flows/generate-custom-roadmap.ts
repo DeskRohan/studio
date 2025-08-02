@@ -29,7 +29,7 @@ const RoadmapPhaseSchema = z.object({
 });
 
 const CustomRoadmapInputSchema = z.object({
-  goal: z.string().describe("The user's primary goal, e.g., 'Placement preparation for a product-based company' or 'GATE exam preparation'."),
+  goal: z.string().describe("The user's primary goal, which will be either 'Placement Preparation' or 'GATE CSE Preparation'."),
   timeline: z.string().describe("The user's available timeline, e.g., '3 months', '6 weeks'."),
 });
 export type CustomRoadmapInput = z.infer<typeof CustomRoadmapInputSchema>;
@@ -55,10 +55,12 @@ The roadmap should be structured, realistic, and comprehensive. It must cover es
 **User's Timeline:** {{{timeline}}}
 
 **Instructions:**
-1.  **Analyze the Goal:** Tailor the content specifically for the user's goal. For 'placements', include DSA, core subjects, and project development. For 'GATE', focus heavily on core subjects and advanced DSA, with less emphasis on web development.
+1.  **Analyze the Goal:** Tailor the content strictly for the user's goal.
+    *   For **'Placement Preparation'**, include DSA, core subjects (DBMS, OS, CN), and practical project development skills. The focus is on interview readiness.
+    *   For **'GATE CSE Preparation'**, focus heavily on core subjects (DBMS, OS, CN, TOC, Compiler Design), advanced DSA, Engineering Mathematics, and Digital Logic. De-emphasize web development projects.
 2.  **Divide into Phases:** Break down the entire timeline into logical, sequential phases. Each phase should have a clear title, duration, and objective.
-3.  **Define Topics:** Within each phase, list specific, actionable topics.
-4.  **Set Practice Goals:** For each phase, provide a tangible practice goal, including a target number of problems to solve.
+3.  **Define Topics:** Within each phase, list specific, actionable topics relevant to the chosen goal.
+4.  **Set Practice Goals:** For each phase, provide a tangible practice goal. For Placements, this is LeetCode-style problems. For GATE, this is previous year questions (PYQs).
 5.  **ID and Initial State:** Ensure all \`id\` fields are unique numbers. All \`completed\` fields must be \`false\` and all \`problemsSolved\` fields must be \`0\`.
 6.  **JSON Output:** You MUST generate the output in the specified JSON format. Do not add any commentary or text outside of the JSON structure.
 

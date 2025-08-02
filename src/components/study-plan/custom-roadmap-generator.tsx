@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
@@ -26,7 +26,7 @@ import {
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 export function CustomRoadmapGenerator() {
-    const [goal, setGoal] = useState('');
+    const [goal, setGoal] = useState('Placement Preparation');
     const [timeline, setTimeline] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [generatedRoadmap, setGeneratedRoadmap] = useState<RoadmapPhase[] | null>(null);
@@ -87,13 +87,15 @@ export function CustomRoadmapGenerator() {
                     <CardContent className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="goal">Your Goal</Label>
-                            <Textarea
-                                id="goal"
-                                placeholder="e.g., Placement at a top product-based company, or GATE CSE preparation..."
-                                value={goal}
-                                onChange={(e) => setGoal(e.target.value)}
-                                rows={2}
-                            />
+                            <Select value={goal} onValueChange={setGoal}>
+                                <SelectTrigger id="goal">
+                                    <SelectValue placeholder="Select a goal" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Placement Preparation">Placement Preparation</SelectItem>
+                                    <SelectItem value="GATE CSE Preparation">GATE CSE Preparation</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="timeline">Your Timeline</Label>
