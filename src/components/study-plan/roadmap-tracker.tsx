@@ -22,14 +22,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox";
-import { ListChecks, Loader2, Save, CheckCircle2, Flame } from "lucide-react";
+import { ListChecks, Loader2, Save, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { defaultRoadmap } from "@/lib/data";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
-import { format, isToday, isYesterday, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 
 type RoadmapItem = {
   id: number;
@@ -43,67 +43,75 @@ type StreakData = {
 }
 
 const ROADMAP_DOC_ID = "dsa-roadmap-main";
+const STREAK_DOC_ID = "user-streak";
+
 
 export function RoadmapTracker() {
   const { toast } = useToast();
   const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [streakData, setStreakData] = useState<StreakData>({ count: 0, lastCompletedDate: ""});
+  
+  const getRoadmapDocRef = useCallback(() => doc(db, "roadmaps", ROADMAP_DOC_ID), []);
+  const getStreakDocRef = useCallback(() => doc(db, "streaks", STREAK_DOC_ID), []);
 
-  const getRoadmapDocRef = useCallback(() => {
-    return doc(db, "roadmaps", ROADMAP_DOC_ID);
-  }, []);
-
-  const getStreakDocRef = useCallback(() => {
-    return doc(db, "streaks", "user-streak");
-  }, []);
-
-  // Effect to load initial data and set up listeners
   useEffect(() => {
-    setIsLoading(true);
-    const roadmapDocRef = getRoadmapDocRef();
-    const streakDocRef = getStreakDocRef();
+    const fetchAndSetupListeners = async () => {
+      setIsLoading(true);
+      const roadmapDocRef = getRoadmapDocRef();
+      const streakDocRef = getStreakDocRef();
+      
+      try {
+        // 1. Fetch initial roadmap data
+        const docSnap = await getDoc(roadmapDocRef);
 
-    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setRoadmapItems(docSnap.data().items as RoadmapItem[]);
-      } else {
-        // If it doesn't exist, create it with default values
-        const newItems = defaultRoadmap.map(item => ({ ...item, completed: false }));
-        setDoc(roadmapDocRef, { items: newItems });
-        setRoadmapItems(newItems);
+        if (docSnap.exists()) {
+          setRoadmapItems(docSnap.data().items as RoadmapItem[]);
+        } else {
+          // If it doesn't exist, create it with default values
+          const newItems = defaultRoadmap.map(item => ({ ...item, completed: false }));
+          await setDoc(roadmapDocRef, { items: newItems });
+          setRoadmapItems(newItems);
+        }
+
+        // 2. Fetch initial streak data
+        const streakSnap = await getDoc(streakDocRef);
+        if (!streakSnap.exists()) {
+            await setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
+        }
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        toast({ title: "Error", description: "Could not load your data. Please refresh.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
       }
-      if (isLoading) setIsLoading(false);
-    }, (error) => {
-      console.error("Error with roadmap snapshot:", error);
-      toast({ title: "Error", description: "Could not load roadmap data.", variant: "destructive" });
-      setIsLoading(false);
-    });
 
-    const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setStreakData(docSnap.data() as StreakData);
-      } else {
-        // If it doesn't exist, create it with default values
-        setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
-      }
-    }, (error) => {
-      console.error("Error with streak snapshot:", error);
-      toast({ title: "Error", description: "Could not load streak data.", variant: "destructive" });
-    });
-
-    return () => {
-      unsubscribeRoadmap();
-      unsubscribeStreak();
+      // 3. Now, set up listeners for real-time updates
+      const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (doc) => {
+        if (doc.exists()) {
+          setRoadmapItems(doc.data().items as RoadmapItem[]);
+        }
+      });
+      
+      // We don't need a real-time listener for streak data on this page,
+      // as it's only updated on save.
+      
+      return () => {
+        unsubscribeRoadmap();
+      };
     };
-  }, [getRoadmapDocRef, getStreakDocRef, toast, isLoading]);
+
+    fetchAndSetupListeners();
+  }, [getRoadmapDocRef, getStreakDocRef, toast]);
 
 
   const updateStreak = async () => {
     const streakDocRef = getStreakDocRef();
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
+
+    const streakSnap = await getDoc(streakDocRef);
+    const streakData = (streakSnap.data() as StreakData) || { count: 0, lastCompletedDate: "" };
 
     if (streakData.lastCompletedDate === todayStr) {
       return; // Already updated today
@@ -120,7 +128,7 @@ export function RoadmapTracker() {
     }
     
     const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-    await setDoc(streakDocRef, newStreakData); // Listener will update local state
+    await setDoc(streakDocRef, newStreakData);
     toast({
         title: "Progress!",
         description: toastMessage,
@@ -137,36 +145,32 @@ export function RoadmapTracker() {
     setRoadmapItems(newItems);
   };
   
-  const handleSaveProgress = () => {
+  const handleSaveProgress = async () => {
     setIsSaving(true);
     const docRef = getRoadmapDocRef();
     
-    // Perform the save operation in the background
-    setDoc(docRef, { items: roadmapItems }, { merge: true })
-        .then(() => {
-            // Check if any item was completed today for the streak
-            const hasCompletedTopic = roadmapItems.some(item => item.completed);
-            if(hasCompletedTopic) {
-                // We can call this without await as it handles its own toast
-                updateStreak();
-            }
+    try {
+        await setDoc(docRef, { items: roadmapItems }, { merge: true });
 
-            toast({
-                title: "Progress Saved",
-                description: "Your roadmap has been successfully saved.",
-            });
-        })
-        .catch((error) => {
-            console.error("Error saving roadmap:", error);
-            toast({
-                title: "Error",
-                description: "Could not save your progress.",
-                variant: "destructive",
-            });
-        })
-        .finally(() => {
-            setIsSaving(false);
+        const hasCompletedTopic = roadmapItems.some(item => item.completed);
+        if(hasCompletedTopic) {
+            await updateStreak();
+        }
+
+        toast({
+            title: "Progress Saved",
+            description: "Your roadmap has been successfully saved across all devices.",
         });
+    } catch (error) {
+        console.error("Error saving roadmap:", error);
+        toast({
+            title: "Error",
+            description: "Could not save your progress.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
   }
 
 
@@ -212,7 +216,7 @@ export function RoadmapTracker() {
             <div className="flex-1">
                 <CardTitle>Your Progress Tracker</CardTitle>
                 <CardDescription>
-                  Check off items as you complete them, then click "Save Progress".
+                  Check off items, then click "Save Progress" to sync across devices.
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -273,14 +277,14 @@ export function RoadmapTracker() {
         ) : (
             <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
                 <ListChecks className="h-12 w-12 mb-4" />
-                <p>Your roadmap could not be loaded.</p>
+                <p>Your roadmap could not be loaded. Please refresh the page.</p>
             </div>
         )}
       </CardContent>
       <CardFooter>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span>Your progress is synced from the database.</span>
+            <span>Your progress is synced from the database. Click Save to update.</span>
           </div>
       </CardFooter>
     </Card>
