@@ -1,15 +1,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Youtube, Book, Laptop, Rocket, Brain, PenTool, TestTube, BookMarked } from "lucide-react";
+import { Youtube, Book, Laptop, Rocket } from "lucide-react";
 import Link from "next/link";
 import { Recommendations } from "@/components/resources/recommendations";
-import { Skeleton } from '@/components/ui/skeleton';
-
-const USER_DATA_KEY = 'user-profile-data';
 
 const placementResources = {
   dsa: [
@@ -28,26 +24,6 @@ const placementResources = {
       { title: "JavaScript30", url: "https://javascript30.com/", icon: Laptop, description: "Build 30 things in 30 days with 30 tutorials. No frameworks, no libraries." },
   ]
 };
-
-const gateResources = {
-  coreSubjects: [
-     { title: "Gate Smashers Playlists", url: "https://www.youtube.com/@GateSmashers/playlists", icon: Youtube, description: "The go-to channel for all core GATE subjects like TOC, COA, Digital Logic, and more." },
-     { title: "Ravindrababu Ravula - TOC", url: "https://www.youtube.com/playlist?list=PLEbnTDJUr_Ier_B3fUvU6wV5g_i2i-t3-", icon: Youtube, description: "Highly detailed and conceptual lectures on Theory of Computation." },
-     { title: "Knowledge Gate - Compilers", url: "https://www.youtube.com/playlist?list=PLmXKhU9FNesSDd4hWp_i-s9zRk3b2s-3o", icon: Youtube, description: "A complete playlist covering every phase of Compiler Design for GATE." },
-     { title: "GeeksforGeeks GATE CSE", url: "https://www.geeksforgeeks.org/gate-cs-notes-gq/", icon: Book, description: "Structured notes, articles, and quizzes for all GATE CSE subjects." },
-  ],
-  maths: [
-      { title: "Discrete Mathematics - by Sudarsan", url: "https://www.youtube.com/playlist?list=PL_mT_b_C4upfrq_hJ3g2y3u2s_2a3sS29", icon: Youtube, description: "An exhaustive playlist covering all topics of Discrete Mathematics for GATE." },
-      { title: "Engineering Mathematics - Saurabh Thakur", url: "https://www.youtube.com/playlist?list=PL_5_i72_h13uJnJ_r4gWIMaFp_b5VjS2s", icon: Youtube, description: "Excellent playlist for mastering Engineering Mathematics concepts." },
-      { title: "GATE Aptitude by Shreyas A", url: "https://www.youtube.com/playlist?list=PL9f_a_5r2jJk8iA4e4h5aJ4_e4L2t3p8u", icon: Youtube, description: "A dedicated series for acing the General Aptitude section of the GATE exam." },
-  ],
-  practice: [
-       { title: "GATE Overflow", url: "https://gateoverflow.in/", icon: Brain, description: "A massive, community-driven collection of previous year questions with detailed solutions." },
-       { title: "Unacademy - GATE & ESE", url: "https://www.youtube.com/@UnacademyGATECECH", icon: Laptop, description: "Live classes, PYQ sessions, and test series from top educators." },
-       { title: "Made Easy - PYQ Solutions", url: "https://www.youtube.com/@MADEASYFORYOU/playlists", icon: TestTube, description: "Detailed video solutions for previous years' GATE question papers." },
-  ],
-};
-
 
 const ResourceCard = ({ title, url, icon: Icon, description }: { title: string, url: string, icon: React.ElementType, description: string }) => (
     <Card className="card-glow-effect flex flex-col">
@@ -77,65 +53,23 @@ const ResourceSection = ({ title, resources }: { title: string, resources: any[]
     </section>
 );
 
-
 export default function ResourcesPage() {
-  const [primaryGoal, setPrimaryGoal] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadGoal = () => {
-        try {
-            const userData = localStorage.getItem(USER_DATA_KEY);
-            const goal = userData ? JSON.parse(userData).goal : 'Placement Preparation';
-            setPrimaryGoal(goal || 'Placement Preparation');
-        } catch (error) {
-            console.error("Failed to load user data from localStorage", error);
-            setPrimaryGoal('Placement Preparation');
-        }
-    };
-
-    loadGoal();
-    window.addEventListener('storage', loadGoal);
-    return () => window.removeEventListener('storage', loadGoal);
-  }, []);
-
-  if (primaryGoal === null) {
-      return (
-          <div className="space-y-8">
-               <Skeleton className="h-12 w-1/2" />
-               <Skeleton className="h-64 w-full" />
-               <Skeleton className="h-48 w-full" />
-               <Skeleton className="h-48 w-full" />
-          </div>
-      )
-  }
-
-  const isPlacement = primaryGoal === 'Placement Preparation';
-
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight font-headline">Curated Resources</h1>
         <p className="text-muted-foreground">
-          Handpicked resources for your goal: <span className="font-semibold text-primary">{primaryGoal}</span>
+          Handpicked resources for your placement preparation journey.
         </p>
       </div>
 
       <Recommendations />
 
-      {isPlacement ? (
-        <>
-            <ResourceSection title="Data Structures & Algorithms" resources={placementResources.dsa} />
-            <ResourceSection title="Core CS Subjects" resources={placementResources.subjects} />
-            <ResourceSection title="Project Development" resources={placementResources.projects} />
-        </>
-      ) : (
-        <>
-            <ResourceSection title="Core Subjects & Concepts" resources={gateResources.coreSubjects} />
-            <ResourceSection title="Engineering & Discrete Mathematics" resources={gateResources.maths} />
-            <ResourceSection title="Practice Platforms & PYQs" resources={gateResources.practice} />
-        </>
-      )}
-
+      <>
+          <ResourceSection title="Data Structures & Algorithms" resources={placementResources.dsa} />
+          <ResourceSection title="Core CS Subjects" resources={placementResources.subjects} />
+          <ResourceSection title="Project Development" resources={placementResources.projects} />
+      </>
     </div>
   );
 }

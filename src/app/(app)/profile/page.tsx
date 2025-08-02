@@ -6,9 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { UserCircle, Save, KeyRound, Target } from 'lucide-react';
+import { UserCircle, Save, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const USER_DATA_KEY = 'user-profile-data';
@@ -16,7 +15,6 @@ const USER_DATA_KEY = 'user-profile-data';
 export default function ProfilePage() {
     const [name, setName] = useState('');
     const [passcode, setPasscode] = useState('');
-    const [primaryGoal, setPrimaryGoal] = useState('Placement Preparation');
     const { toast } = useToast();
     const router = useRouter();
 
@@ -24,11 +22,8 @@ export default function ProfilePage() {
         try {
             const savedData = localStorage.getItem(USER_DATA_KEY);
             if (savedData) {
-                const { name: savedName, goal: savedGoal } = JSON.parse(savedData);
+                const { name: savedName } = JSON.parse(savedData);
                 setName(savedName);
-                if (savedGoal) {
-                    setPrimaryGoal(savedGoal);
-                }
             }
         } catch (error) {
             console.error("Failed to load user data from localStorage", error);
@@ -58,7 +53,6 @@ export default function ProfilePage() {
             const newData = {
                 ...savedData,
                 name: name.trim(),
-                goal: primaryGoal,
                 ...(passcode && { passcode: passcode }), // Only update passcode if a new one is entered
             };
             localStorage.setItem(USER_DATA_KEY, JSON.stringify(newData));
@@ -87,7 +81,7 @@ export default function ProfilePage() {
                     <UserCircle className="h-8 w-8"/>
                     My Profile
                 </h1>
-                <p className="text-muted-foreground">Manage your local profile information and primary goal.</p>
+                <p className="text-muted-foreground">Manage your local profile information.</p>
             </div>
             <Card className="max-w-2xl mx-auto card-glow-effect">
                 <form onSubmit={handleSave}>
@@ -106,21 +100,6 @@ export default function ProfilePage() {
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Your Name"
                             />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="primary-goal">Primary Goal</Label>
-                             <div className="flex items-center gap-2">
-                                <Target className="text-muted-foreground" />
-                                <Select value={primaryGoal} onValueChange={setPrimaryGoal}>
-                                    <SelectTrigger id="primary-goal">
-                                        <SelectValue placeholder="Select your primary goal" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Placement Preparation">Placement Preparation</SelectItem>
-                                        <SelectItem value="GATE CSE Preparation">GATE CSE Preparation</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                             </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="passcode">New 4-Digit Passcode</Label>

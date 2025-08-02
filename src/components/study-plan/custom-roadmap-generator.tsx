@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
@@ -26,7 +25,6 @@ import {
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 export function CustomRoadmapGenerator() {
-    const [goal, setGoal] = useState('Placement Preparation');
     const [timeline, setTimeline] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [generatedRoadmap, setGeneratedRoadmap] = useState<RoadmapPhase[] | null>(null);
@@ -35,8 +33,8 @@ export function CustomRoadmapGenerator() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!goal.trim() || !timeline.trim()) {
-            toast({ title: 'Missing Information', description: 'Please provide both a goal and a timeline.', variant: 'destructive' });
+        if (!timeline.trim()) {
+            toast({ title: 'Missing Information', description: 'Please provide a timeline.', variant: 'destructive' });
             return;
         }
 
@@ -45,7 +43,7 @@ export function CustomRoadmapGenerator() {
         setGeneratedRoadmap(null);
 
         try {
-            const response = await generateCustomRoadmap({ goal, timeline });
+            const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
             if (response.roadmap && response.roadmap.length > 0) {
                 setGeneratedRoadmap(response.roadmap);
             } else {
@@ -81,22 +79,10 @@ export function CustomRoadmapGenerator() {
                             AI Roadmap Generator
                         </CardTitle>
                         <CardDescription>
-                            Don't like the default plan? Generate a new one tailored to your needs.
+                            Don't like the default plan? Generate a new one tailored to your timeline.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="goal">Your Goal</Label>
-                            <Select value={goal} onValueChange={setGoal}>
-                                <SelectTrigger id="goal">
-                                    <SelectValue placeholder="Select a goal" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Placement Preparation">Placement Preparation</SelectItem>
-                                    <SelectItem value="GATE CSE Preparation">GATE CSE Preparation</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <CardContent className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="timeline">Your Timeline</Label>
                             <Input
@@ -108,7 +94,7 @@ export function CustomRoadmapGenerator() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" disabled={isLoading || !goal.trim() || !timeline.trim()}>
+                        <Button type="submit" disabled={isLoading || !timeline.trim()}>
                             {isLoading ? <Loader2 className="animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             {isLoading ? 'Generating...' : 'Generate My Plan'}
                         </Button>

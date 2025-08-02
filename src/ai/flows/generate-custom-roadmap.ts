@@ -29,7 +29,7 @@ const RoadmapPhaseSchema = z.object({
 });
 
 const CustomRoadmapInputSchema = z.object({
-  goal: z.string().describe("The user's primary goal, which will be either 'Placement Preparation' or 'GATE CSE Preparation'."),
+  goal: z.string().describe("The user's primary goal, which will be 'Placement Preparation'."),
   timeline: z.string().describe("The user's available timeline, e.g., '3 months', '6 weeks'."),
 });
 export type CustomRoadmapInput = z.infer<typeof CustomRoadmapInputSchema>;
@@ -47,24 +47,21 @@ const prompt = ai.definePrompt({
   name: 'customRoadmapPrompt',
   input: { schema: CustomRoadmapInputSchema },
   output: { schema: CustomRoadmapOutputSchema },
-  prompt: `You are an expert computer science curriculum designer and career coach. Your task is to create a detailed, phase-by-phase learning roadmap for a student based on their specific goal and timeline.
+  prompt: `You are an expert computer science curriculum designer and career coach. Your task is to create a detailed, phase-by-phase learning roadmap for a student focused on **Placement Preparation**.
 
-The roadmap should be structured, realistic, and comprehensive. It must cover essential Data Structures & Algorithms (DSA), core CS subjects (like DBMS, OS, CN), and development skills where relevant.
+The roadmap should be structured, realistic, and comprehensive. It must cover essential Data Structures & Algorithms (DSA), core CS subjects (like DBMS, OS, CN), and practical project development skills.
 
-**User's Goal:** {{{goal}}}
+**User's Goal:** Placement Preparation
 **User's Timeline:** {{{timeline}}}
 
 **Instructions:**
-1.  **Analyze the Goal:** Tailor the content strictly for the user's goal.
-    *   For **'Placement Preparation'**, include DSA, core subjects (DBMS, OS, CN), and practical project development skills. The focus is on interview readiness.
-    *   For **'GATE CSE Preparation'**, focus heavily on core subjects (DBMS, OS, CN, TOC, Compiler Design), advanced DSA, Engineering Mathematics, and Digital Logic. De-emphasize web development projects.
-2.  **Divide into Phases:** Break down the entire timeline into logical, sequential phases. Each phase should have a clear title, duration, and objective.
-3.  **Define Topics:** Within each phase, list specific, actionable topics relevant to the chosen goal.
-4.  **Set Practice Goals:** For each phase, provide a tangible practice goal. For Placements, this is LeetCode-style problems. For GATE, this is previous year questions (PYQs).
-5.  **ID and Initial State:** Ensure all \`id\` fields are unique numbers. All \`completed\` fields must be \`false\` and all \`problemsSolved\` fields must be \`0\`.
-6.  **JSON Output:** You MUST generate the output in the specified JSON format. Do not add any commentary or text outside of the JSON structure.
+1.  **Analyze the Timeline:** Break down the entire timeline into logical, sequential phases. Each phase should have a clear title, duration, and objective.
+2.  **Define Topics:** Within each phase, list specific, actionable topics relevant to placement preparation. This includes DSA, core subjects, and development skills.
+3.  **Set Practice Goals:** For each phase, provide a tangible practice goal (e.g., LeetCode-style problems).
+4.  **ID and Initial State:** Ensure all \`id\` fields are unique numbers. All \`completed\` fields must be \`false\` and all \`problemsSolved\` fields must be \`0\`.
+5.  **JSON Output:** You MUST generate the output in the specified JSON format. Do not add any commentary or text outside of the JSON structure.
 
-Generate the roadmap now.`,
+Generate the placement preparation roadmap now.`,
 });
 
 const generateCustomRoadmapFlow = ai.defineFlow(
