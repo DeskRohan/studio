@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
-import { Onest } from 'next/font/google';
+import { Unbounded } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
-const onest = Onest({
+const unbounded = Unbounded({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-onest',
+  variable: '--font-unbounded',
 });
 
 
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${onest.variable} h-full`} suppressHydrationWarning>
+    <html lang="en" className={`${unbounded.variable} h-full`} suppressHydrationWarning>
       <head />
       <body>
         <ThemeProvider
