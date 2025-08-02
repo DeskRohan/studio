@@ -12,7 +12,7 @@ import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar
 
 const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-96 col-span-1 lg:col-span-3" />,
+  loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
 });
 
 const ROADMAP_STORAGE_KEY = "dsa-roadmap-data";
@@ -107,71 +107,77 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{userName}'s Dashboard</h1>
-          <p className="text-muted-foreground">An overview of your progress.</p>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{userName}'s Dashboard</h1>
+        <p className="text-muted-foreground">An overview of your progress and motivation.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {isLoading ? (
+                    <>
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                    </>
+                ) : (
+                    <>
+                        <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Topics Completed</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{completedCount}</div>
+                            <p className="text-xs text-muted-foreground">out of {totalCount} total topics</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Topics Remaining</CardTitle>
+                            <Target className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{remainingCount}</div>
+                            <p className="text-xs text-muted-foreground">Keep going!</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
+                            <Flame className="h-4 w-4 text-primary" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{streak}</div>
+                            <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
+                          </CardContent>
+                        </Card>
+                         <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Streak Badge</CardTitle>
+                            <Award className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold flex items-center gap-2">
+                                <span>{streakBadge.icon}</span>
+                                <span>{streakBadge.name}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{streak > 0 ? `Level ${streakBadge.level} Achievement` : "Start a streak to earn a badge!"}</p>
+                          </CardContent>
+                        </Card>
+                    </>
+                )}
+            </div>
+            <OverviewChart completed={completedCount} remaining={remainingCount} />
         </div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-          </>
-        ) : (
-          <>
-            <Card className="card-glow-effect">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Topics Completed</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{completedCount}</div>
-                <p className="text-xs text-muted-foreground">out of {totalCount} total topics</p>
-              </CardContent>
-            </Card>
-            <Card className="card-glow-effect">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Topics Remaining</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{remainingCount}</div>
-                <p className="text-xs text-muted-foreground">Keep going!</p>
-              </CardContent>
-            </Card>
-            <Card className="card-glow-effect">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
-                <Flame className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{streak}</div>
-                <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
-              </CardContent>
-            </Card>
-             <Card className="card-glow-effect">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Streak Badge</CardTitle>
-                <Award className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold flex items-center gap-2">
-                    <span>{streakBadge.icon}</span>
-                    <span>{streakBadge.name}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{streak > 0 ? `Level ${streakBadge.level} Achievement` : "Start a streak to earn a badge!"}</p>
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </div>
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Right Column */}
+        <div className="lg:col-span-1 space-y-6">
             <ConsistencyCalendar consistency={consistency} />
-             <Card className="lg:col-span-2 card-glow-effect">
+            <Card className="card-glow-effect">
               <CardHeader>
                 <CardTitle>Daily Quote</CardTitle>
                  <CardDescription>A little motivation for your day.</CardDescription>
@@ -181,10 +187,8 @@ export default function DashboardPage() {
                  <blockquote className="text-sm italic border-l-4 border-primary pl-4">"{quote}"</blockquote>
               </CardContent>
             </Card>
-       </div>
-       <div className="grid grid-cols-1">
-            <OverviewChart completed={completedCount} remaining={remainingCount} />
-       </div>
+        </div>
+      </div>
     </div>
   );
 }
