@@ -59,55 +59,45 @@ export function RoadmapTracker() {
     return doc(db, "streaks", "user-streak");
   }, []);
 
-  // Effect to load initial data
+  // Effect to load initial data and set up listeners
   useEffect(() => {
-    const roadmapDocRef = getRoadmapDocRef();
-    
-    const setupRoadmap = async () => {
-      setIsLoading(true);
-      const docSnap = await getDoc(roadmapDocRef);
-
-      if (docSnap.exists()) {
-        setRoadmapItems(docSnap.data().items as RoadmapItem[]);
-      } else {
-        const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
-        await setDoc(roadmapDocRef, { items: newItems });
-        setRoadmapItems(newItems);
-      }
-      setIsLoading(false);
-    };
-    
-    setupRoadmap().catch(error => {
-      console.error("Error setting up roadmap:", error);
-      toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
-      setIsLoading(false);
-    });
-  }, [getRoadmapDocRef, toast]);
-  
-  // Effect for real-time listeners
-  useEffect(() => {
+    setIsLoading(true);
     const roadmapDocRef = getRoadmapDocRef();
     const streakDocRef = getStreakDocRef();
 
-    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (doc) => {
-      if (doc.exists()) {
-        setRoadmapItems(doc.data().items as RoadmapItem[]);
+    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setRoadmapItems(docSnap.data().items as RoadmapItem[]);
+      } else {
+        // If it doesn't exist, create it with default values
+        const newItems = defaultRoadmap.map(item => ({ ...item, completed: false }));
+        setDoc(roadmapDocRef, { items: newItems });
+        setRoadmapItems(newItems);
       }
+      if (isLoading) setIsLoading(false);
+    }, (error) => {
+      console.error("Error with roadmap snapshot:", error);
+      toast({ title: "Error", description: "Could not load roadmap data.", variant: "destructive" });
+      setIsLoading(false);
     });
 
     const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            setStreakData(docSnap.data() as StreakData);
-        } else {
-            setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
-        }
+      if (docSnap.exists()) {
+        setStreakData(docSnap.data() as StreakData);
+      } else {
+        // If it doesn't exist, create it with default values
+        setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
+      }
+    }, (error) => {
+      console.error("Error with streak snapshot:", error);
+      toast({ title: "Error", description: "Could not load streak data.", variant: "destructive" });
     });
 
     return () => {
       unsubscribeRoadmap();
       unsubscribeStreak();
     };
-  }, [getRoadmapDocRef, getStreakDocRef]);
+  }, [getRoadmapDocRef, getStreakDocRef, toast, isLoading]);
 
 
   const updateStreak = async () => {
@@ -130,7 +120,7 @@ export function RoadmapTracker() {
     }
     
     const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-    await setDoc(streakDocRef, newStreakData); // No need to set local state, listener will do it.
+    await setDoc(streakDocRef, newStreakData); // Listener will update local state
     toast({
         title: "Progress!",
         description: toastMessage,
@@ -147,32 +137,36 @@ export function RoadmapTracker() {
     setRoadmapItems(newItems);
   };
   
-  const handleSaveProgress = async () => {
+  const handleSaveProgress = () => {
     setIsSaving(true);
     const docRef = getRoadmapDocRef();
-    try {
-        await setDoc(docRef, { items: roadmapItems }, { merge: true });
+    
+    // Perform the save operation in the background
+    setDoc(docRef, { items: roadmapItems }, { merge: true })
+        .then(() => {
+            // Check if any item was completed today for the streak
+            const hasCompletedTopic = roadmapItems.some(item => item.completed);
+            if(hasCompletedTopic) {
+                // We can call this without await as it handles its own toast
+                updateStreak();
+            }
 
-        // Check if any item was completed today for the streak
-        const hasCompletedTopic = roadmapItems.some(item => item.completed);
-        if(hasCompletedTopic) {
-            updateStreak();
-        }
-
-        toast({
-            title: "Progress Saved",
-            description: "Your roadmap has been successfully saved.",
+            toast({
+                title: "Progress Saved",
+                description: "Your roadmap has been successfully saved.",
+            });
+        })
+        .catch((error) => {
+            console.error("Error saving roadmap:", error);
+            toast({
+                title: "Error",
+                description: "Could not save your progress.",
+                variant: "destructive",
+            });
+        })
+        .finally(() => {
+            setIsSaving(false);
         });
-    } catch (error) {
-        console.error("Error saving roadmap:", error);
-        toast({
-            title: "Error",
-            description: "Could not save your progress.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsSaving(false);
-    }
   }
 
 
@@ -224,7 +218,7 @@ export function RoadmapTracker() {
             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <Button onClick={handleSaveProgress} disabled={isSaving} className="w-full sm:w-auto">
                     {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-                    Save Progress
+                    {isSaving ? "Saving..." : "Save Progress"}
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -286,7 +280,7 @@ export function RoadmapTracker() {
       <CardFooter>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span>Your progress is synced from the database in real-time.</span>
+            <span>Your progress is synced from the database.</span>
           </div>
       </CardFooter>
     </Card>
