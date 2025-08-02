@@ -59,7 +59,7 @@ The roadmap should be structured, realistic, and comprehensive. It must cover es
 2.  **Divide into Phases:** Break down the entire timeline into logical, sequential phases. Each phase should have a clear title, duration, and objective.
 3.  **Define Topics:** Within each phase, list specific, actionable topics.
 4.  **Set Practice Goals:** For each phase, provide a tangible practice goal, including a target number of problems to solve.
-5.  **ID and Initial State:** Ensure all `id` fields are unique numbers. All `completed` fields must be `false` and all `problemsSolved` fields must be `0`.
+5.  **ID and Initial State:** Ensure all \`id\` fields are unique numbers. All \`completed\` fields must be \`false\` and all \`problemsSolved\` fields must be \`0\`.
 6.  **JSON Output:** You MUST generate the output in the specified JSON format. Do not add any commentary or text outside of the JSON structure.
 
 Generate the roadmap now.`,
