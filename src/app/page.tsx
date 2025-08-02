@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info } from 'lucide-react';
+import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info, LogIn } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
 import {
@@ -30,7 +30,7 @@ const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 
 export default function WelcomePage() {
-  const [mode, setMode] = useState<'loading' | 'login' | 'setup'>('loading');
+  const [mode, setMode] = useState<'loading' | 'welcome' | 'login' | 'setup'>('loading');
   const [passcode, setPasscode] = useState('');
   const [name, setName] = useState('');
   const [newPasscode, setNewPasscode] = useState('');
@@ -44,7 +44,7 @@ export default function WelcomePage() {
     try {
       const userData = localStorage.getItem(USER_DATA_KEY);
       if (userData) {
-        setMode('login');
+        setMode('welcome');
       } else {
         setMode('setup');
       }
@@ -59,18 +59,28 @@ export default function WelcomePage() {
     setIsLoading(true);
 
     setTimeout(() => {
-        const userData = JSON.parse(localStorage.getItem(USER_DATA_KEY)!);
-        if (passcode === userData.passcode) {
-            sessionStorage.setItem(AUTH_KEY, 'true');
-            setIsUnlocked(true);
-            setTimeout(() => router.push('/dashboard'), 2500);
-        } else {
-            toast({
-                title: 'Incorrect Passcode',
-                description: 'The passcode you entered is not correct. Please try again.',
+        try {
+            const userData = JSON.parse(localStorage.getItem(USER_DATA_KEY)!);
+            if (passcode === userData.passcode) {
+                sessionStorage.setItem(AUTH_KEY, 'true');
+                setIsUnlocked(true);
+                setTimeout(() => router.push('/dashboard'), 2500);
+            } else {
+                toast({
+                    title: 'Incorrect Passcode',
+                    description: 'The passcode you entered is not correct. Please try again.',
+                    variant: 'destructive',
+                });
+                setIsLoading(false);
+            }
+        } catch (e) {
+             toast({
+                title: 'Login Error',
+                description: 'Could not find profile data. Please try setting up a new profile.',
                 variant: 'destructive',
             });
             setIsLoading(false);
+            setMode('setup');
         }
     }, 500);
   };
@@ -147,77 +157,100 @@ export default function WelcomePage() {
                   </div>
                   
                   <div className="w-full max-w-sm mx-auto">
+                     {mode === 'welcome' && (
+                        <Card className="w-full h-full card-glow-effect flex flex-col justify-center">
+                            <CardHeader>
+                                <CardTitle className="text-2xl">Welcome!</CardTitle>
+                                <CardDescription>
+                                    You already have a local profile. Login or create a new one.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-4">
+                                <Button onClick={() => setMode('login')} className="w-full">
+                                    <LogIn className="mr-2 h-4 w-4"/>
+                                    Login to Existing Profile
+                                </Button>
+                                <Button onClick={() => setMode('setup')} variant="outline" className="w-full">
+                                    <UserPlus className="mr-2 h-4 w-4"/>
+                                    Create a New Profile
+                                </Button>
+                            </CardContent>
+                        </Card>
+                     )}
                     {mode === 'login' && (
                         <Card className="w-full h-full card-glow-effect">
                             <CardHeader>
-                            <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-                            <CardDescription>
-                                Please enter your passcode to access your dashboard.
-                            </CardDescription>
+                                <CardTitle className="text-2xl">Welcome Back!</CardTitle>
+                                <CardDescription>
+                                    Please enter your passcode to access your dashboard.
+                                </CardDescription>
                             </CardHeader>
                             <form onSubmit={handleLogin}>
-                            <CardContent className="grid gap-4">
-                                <div className="grid gap-2">
-                                <Label htmlFor="passcode">4-Digit Passcode</Label>
-                                <Input
-                                    id="passcode"
-                                    type="password"
-                                    maxLength={4}
-                                    placeholder="••••"
-                                    required
-                                    value={passcode}
-                                    onChange={(e) => setPasscode(e.target.value)}
-                                    className="text-center text-2xl tracking-[1rem]"
-                                />
-                                </div>
-                            </CardContent>
-                            <CardFooter className="flex flex-col">
-                                <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                                Unlock
-                                </Button>
-                            </CardFooter>
+                                <CardContent className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="passcode">4-Digit Passcode</Label>
+                                        <Input
+                                            id="passcode"
+                                            type="password"
+                                            maxLength={4}
+                                            placeholder="••••"
+                                            required
+                                            value={passcode}
+                                            onChange={(e) => setPasscode(e.target.value)}
+                                            className="text-center text-2xl tracking-[0.5rem]"
+                                        />
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="flex flex-col gap-2">
+                                    <Button type="submit" className="w-full" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                                    Unlock
+                                    </Button>
+                                    <Button variant="link" size="sm" onClick={() => setMode('welcome')}>
+                                        Go Back
+                                    </Button>
+                                </CardFooter>
                             </form>
                         </Card>
                     )}
                     {mode === 'setup' && (
                         <Card className="w-full h-full card-glow-effect">
                             <CardHeader>
-                            <CardTitle className="text-2xl">Let's Get Started</CardTitle>
-                            <CardDescription>
-                                Create your local profile to begin your journey.
-                            </CardDescription>
+                                <CardTitle className="text-2xl">Let's Get Started</CardTitle>
+                                <CardDescription>
+                                    Create your local profile to begin your journey.
+                                </CardDescription>
                             </CardHeader>
                             <form onSubmit={handleSetup}>
-                            <CardContent className="grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="name">Your Name</Label>
-                                    <Input id="name" placeholder="Rohan Godakhindi" required value={name} onChange={(e) => setName(e.target.value)} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="new-passcode">Set a 4-Digit Passcode</Label>
-                                    <Input
-                                        id="new-passcode"
-                                        type="password"
-                                        maxLength={4}
-                                        placeholder="••••"
-                                        required
-                                        value={newPasscode}
-                                        onChange={(e) => setNewPasscode(e.target.value)}
-                                        className="text-center text-2xl tracking-[1rem]"
-                                    />
-                                </div>
-                            </CardContent>
-                            <CardFooter className="flex flex-col gap-2">
-                                <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                    Create Profile
-                                </Button>
-                                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 text-center mt-2">
-                                    <Info className="h-4 w-4 shrink-0" />
-                                    <span>Your info is saved only on this device.</span>
-                                 </p>
-                            </CardFooter>
+                                <CardContent className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="name">Your Name</Label>
+                                        <Input id="name" placeholder="Enter your name" required value={name} onChange={(e) => setName(e.target.value)} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="new-passcode">Set a 4-Digit Passcode</Label>
+                                        <Input
+                                            id="new-passcode"
+                                            type="password"
+                                            maxLength={4}
+                                            placeholder="••••"
+                                            required
+                                            value={newPasscode}
+                                            onChange={(e) => setNewPasscode(e.target.value)}
+                                            className="text-center text-2xl tracking-[0.5rem]"
+                                        />
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="flex flex-col gap-2">
+                                    <Button type="submit" className="w-full" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                        Create Profile
+                                    </Button>
+                                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 text-center mt-2">
+                                        <Info className="h-4 w-4 shrink-0" />
+                                        <span>Your info is saved only on this device.</span>
+                                     </p>
+                                </CardFooter>
                             </form>
                         </Card>
                     )}

@@ -7,10 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { UserCircle, Save, KeyRound } from 'lucide-react';
+import { User, Save, KeyRound, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const USER_DATA_KEY = 'user-profile-data';
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+const STREAK_STORAGE_KEY = 'user-streak-data';
+const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
+const AUTH_KEY = 'authenticated_v2';
+
 
 export default function ProfilePage() {
     const [name, setName] = useState('');
@@ -73,12 +89,36 @@ export default function ProfilePage() {
             });
         }
     };
+    
+    const handleDeleteAccount = () => {
+        try {
+            localStorage.removeItem(USER_DATA_KEY);
+            localStorage.removeItem(ROADMAP_STORAGE_KEY);
+            localStorage.removeItem(STREAK_STORAGE_KEY);
+            localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
+            sessionStorage.removeItem(AUTH_KEY);
+            
+            toast({
+                title: "Account Deleted",
+                description: "All your local data has been removed.",
+            });
+            
+            router.push('/');
+
+        } catch (error) {
+             toast({
+                title: "Error",
+                description: "Could not delete your account data.",
+                variant: "destructive"
+            });
+        }
+    }
 
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight font-headline flex items-center gap-2">
-                    <UserCircle className="h-8 w-8"/>
+                    <User className="h-8 w-8"/>
                     My Profile
                 </h1>
                 <p className="text-muted-foreground">Manage your local profile information.</p>
@@ -94,12 +134,15 @@ export default function ProfilePage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Your Name"
-                            />
+                            <div className="flex items-center gap-2">
+                                <User className="text-muted-foreground" />
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Your Name"
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="passcode">New 4-Digit Passcode</Label>
@@ -124,6 +167,37 @@ export default function ProfilePage() {
                         </Button>
                     </CardFooter>
                 </form>
+            </Card>
+
+            <Card className="max-w-2xl mx-auto border-destructive/50">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                    <CardDescription>
+                        This is a permanent action. Once you delete your account, all your data including profile, roadmap progress, and streak will be lost.
+                    </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Account
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your account and all associated data from this device.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteAccount}>Yes, Delete My Account</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardFooter>
             </Card>
         </div>
     );
