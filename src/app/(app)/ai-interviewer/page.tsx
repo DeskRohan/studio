@@ -75,7 +75,7 @@ export default function AiInterviewerPage() {
                             Read the question below and formulate your response.
                         </CardDescription>
                     </div>
-                    <Button variant="outline" size="icon" onClick={getNewQuestion} title="Get a new question">
+                    <Button variant="ghost" size="icon" onClick={getNewQuestion} title="Get a new question">
                         <RefreshCw />
                     </Button>
                 </div>
