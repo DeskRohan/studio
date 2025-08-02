@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { defaultRoadmap } from "@/lib/data";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
-import { format, subDays, isToday } from "date-fns";
+import { format, subDays } from "date-fns";
 
 type RoadmapItem = {
   id: number;
@@ -42,6 +42,7 @@ type StreakData = {
 
 const ROADMAP_STORAGE_KEY = "dsa-roadmap-data";
 const STREAK_STORAGE_KEY = "user-streak-data";
+const CONSISTENCY_STORAGE_KEY = "user-consistency-data";
 
 export function RoadmapTracker() {
   const { toast } = useToast();
@@ -69,16 +70,24 @@ export function RoadmapTracker() {
     setIsLoading(false);
   }, []);
 
-  const updateStreak = useCallback(() => {
+  const updateConsistencyAndStreak = useCallback((isCompleted: boolean) => {
     try {
-        const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
-        const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
         const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-        // Check if a topic was completed today. Don't update streak if user unchecks everything.
-        const hasCompletedTopic = roadmapItems.some(item => !item.text.startsWith('#') && item.completed);
+        // Update Consistency
+        const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
+        const consistency: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
+        if (isCompleted) {
+            if (!consistency.includes(todayStr)) {
+                consistency.push(todayStr);
+                localStorage.setItem(CONSISTENCY_STORAGE_KEY, JSON.stringify(consistency));
+            }
+        }
 
-        if (!hasCompletedTopic) return;
+        // Update Streak
+        const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
+        const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
+
         if (streakData.lastCompletedDate === todayStr) return; // Already updated today
 
         let newStreakCount = 1;
@@ -99,13 +108,13 @@ export function RoadmapTracker() {
             description: toastMessage,
         });
         
-        // Manually trigger a storage event to update dashboard in the same tab
+        // Manually trigger a storage event to update dashboard
         window.dispatchEvent(new Event('storage'));
 
     } catch(e) {
-        console.error("Could not update streak", e);
+        console.error("Could not update streak/consistency", e);
     }
-  }, [roadmapItems, toast]);
+  }, [toast]);
 
 
   const handleToggleComplete = (id: number) => {
@@ -115,9 +124,10 @@ export function RoadmapTracker() {
     setRoadmapItems(newItems);
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newItems));
     
-    // Check and update streak after state has been updated
-    if (!newItems.find(item => item.id === id)?.text.startsWith('#') && newItems.find(item => item.id === id)?.completed) {
-        updateStreak();
+    const wasCompleted = !!newItems.find(item => item.id === id)?.completed;
+
+    if (!newItems.find(item => item.id === id)?.text.startsWith('#') && wasCompleted) {
+        updateConsistencyAndStreak(true);
     } else {
         // Manually trigger a storage event to update dashboard in the same tab
         window.dispatchEvent(new Event('storage'));
@@ -131,6 +141,8 @@ export function RoadmapTracker() {
 
     const newStreakData = { count: 0, lastCompletedDate: ""};
     localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(newStreakData));
+    localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
+
 
     // Manually trigger a storage event to update dashboard in the same tab
     window.dispatchEvent(new Event('storage'));
@@ -171,7 +183,7 @@ export function RoadmapTracker() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently reset your roadmap progress and streak on this device.
+                    This action cannot be undone. This will permanently reset your roadmap progress, streak, and consistency data on this device.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

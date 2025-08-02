@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
 import { motivationalQuotes } from "@/lib/quotes";
 import { defaultRoadmap } from "@/lib/data";
+import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
 
 const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
   ssr: false,
@@ -16,6 +17,8 @@ const OverviewChart = dynamic(() => import('@/components/dashboard/overview-char
 
 const ROADMAP_STORAGE_KEY = "dsa-roadmap-data";
 const STREAK_STORAGE_KEY = "user-streak-data";
+const CONSISTENCY_STORAGE_KEY = "user-consistency-data";
+
 
 type RoadmapItem = {
   id: number;
@@ -40,6 +43,7 @@ export default function DashboardPage() {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [consistency, setConsistency] = useState<string[]>([]);
   const [quote, setQuote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("Rohan");
@@ -61,6 +65,11 @@ export default function DashboardPage() {
     const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
     setStreak(streakData.count);
 
+    // Load Consistency from localStorage
+    const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
+    const consistencyData: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
+    setConsistency(consistencyData);
+
     setIsLoading(false);
 
     // Listen for changes from other tabs
@@ -77,6 +86,11 @@ export default function DashboardPage() {
         if (updatedStreak) {
             const newStreakData: StreakData = JSON.parse(updatedStreak);
             setStreak(newStreakData.count);
+        }
+
+        const updatedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
+        if (updatedConsistency) {
+            setConsistency(JSON.parse(updatedConsistency));
         }
     };
 
@@ -155,8 +169,8 @@ export default function DashboardPage() {
           </>
         )}
       </div>
-       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <OverviewChart completed={completedCount} remaining={remainingCount} />
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ConsistencyCalendar consistency={consistency} />
              <Card className="lg:col-span-1 card-glow-effect">
               <CardHeader>
                 <CardTitle>Daily Quote</CardTitle>
@@ -167,6 +181,9 @@ export default function DashboardPage() {
                  <p className="text-sm italic">"{quote}"</p>
               </CardContent>
             </Card>
+       </div>
+       <div className="grid grid-cols-1">
+            <OverviewChart completed={completedCount} remaining={remainingCount} />
        </div>
     </div>
   );
