@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { allQuestions, Question } from '@/lib/questions';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpRight, ArrowUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const topics = ["All", ...Array.from(new Set(allQuestions.map(q => q.topic)))];
 const difficulties = ["All", "Easy", "Medium", "Hard"];
@@ -139,8 +140,4 @@ export default function QuestionBankPage() {
             </Card>
         </div>
     );
-}
-
-function cn(...inputs: (string | undefined | null | false)[]): string {
-  return inputs.filter(Boolean).join(' ');
 }
