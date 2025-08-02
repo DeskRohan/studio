@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText } from "lucide-react";
+import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, BrainCircuit } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 import {
@@ -20,6 +20,7 @@ const navItems = [
   { href: "/study-plan", icon: Rocket, label: "Roadmap" },
   { href: "/question-bank", icon: BookText, label: "Questions" },
   { href: "/resources", icon: Library, label: "Resources" },
+  { href: "/ai-tutor", icon: BrainCircuit, label: "AI Tutor" },
   { href: "/ai-interviewer", icon: Mic, label: "Interviewer" },
   { href: "/architect", icon: User, label: "Architect" },
 ];
@@ -73,7 +74,7 @@ export function Header() {
         </Link>
       </div>
 
-      <div className="flex flex-1 items-center justify-end gap-4">
+      <div className="flex flex-1 items-center justify-end gap-2">
         <ThemeToggle />
         <TooltipProvider>
             <Tooltip>
@@ -101,7 +102,7 @@ export function MobileNav() {
         <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
             <div className="border-t bg-background/95 p-2 backdrop-blur-sm">
                 <TooltipProvider>
-                    <nav className="grid grid-cols-6 items-center justify-around gap-1">
+                    <nav className="grid grid-cols-7 items-center justify-around gap-1">
                         {navItems.map((item) => (
                             <Tooltip key={item.href}>
                                 <TooltipTrigger asChild>
