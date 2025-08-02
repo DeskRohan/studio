@@ -71,26 +71,9 @@ export function Header() {
             <GraduationCap className="h-6 w-6 text-primary" />
             <span className="font-bold text-primary">NextGenSDE</span>
         </Link>
-        <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={handleLogout}>
-                            <LogOut className="h-5 w-5" />
-                            <span className="sr-only">Logout</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Logout</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </div>
       </div>
 
-
-      <div className="hidden items-center gap-4 md:ml-auto md:flex md:gap-2 lg:gap-4">
+      <div className="flex items-center gap-4 md:ml-auto">
         <ThemeToggle />
         <TooltipProvider>
             <Tooltip>
@@ -130,7 +113,7 @@ export function MobileNav() {
                             )}
                         >
                             <item.icon className="h-5 w-5" />
-                            <span className="text-[10px] leading-none text-center">{item.label}</span>
+                            <span className="text-[10px] leading-none text-center xs:hidden sm:block">{item.label}</span>
                         </Link>
                     ))}
                 </nav>

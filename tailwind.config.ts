@@ -1,4 +1,6 @@
 import type {Config} from 'tailwindcss';
+import { screens } from 'tailwindcss/defaultTheme'
+
 
 export default {
   darkMode: ['class'],
@@ -8,6 +10,10 @@ export default {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+     screens: {
+      xs: '400px',
+      ...screens,
+    },
     extend: {
       fontFamily: {
         body: ['var(--font-inter)', 'sans-serif'],
