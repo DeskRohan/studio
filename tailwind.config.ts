@@ -16,6 +16,7 @@ export default {
     },
     extend: {
       fontFamily: {
+        sans: ['Unbounded', 'sans-serif'],
         body: ['Unbounded', 'sans-serif'],
         headline: ['Unbounded', 'sans-serif'],
         code: ['monospace'],
