@@ -12,7 +12,7 @@ const resources = {
   subjects: [
     { title: "DBMS - CodeHelp by Babbar", url: "https://www.youtube.com/playlist?list=PLrL_PSQ6q062cD0vPMGYW_AIpNg6T0_Fq", icon: Youtube, description: "A comprehensive playlist covering all essential DBMS topics for interviews." },
     { title: "Operating Systems - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGz9donHRrE9I3Mwn6XdP8p", icon: Youtube, description: "Clear and concise videos on all important OS concepts." },
-    { title: "Computer Networks - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGFBD2-2LcHkw5AOYbt6S8f", icon: Youtube, description: "The most popular and effective playlist for understanding Computer Networks." },
+    { title: "Computer Networks - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGFBD2-2joCpWOLUrDLvVV_", icon: Youtube, description: "The most popular and effective playlist for understanding Computer Networks." },
   ],
   aptitude: [
       { title: "Indiabix", url: "https://www.indiabix.com/", icon: Laptop, description: "A vast collection of aptitude questions and mock tests for practice." },
