@@ -96,7 +96,7 @@ export function Recommendations() {
         <section>
             <Card className="bg-secondary/50 dark:bg-secondary/20 border-primary/20 card-glow-effect">
                 <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Sparkles className="h-6 w-6 text-primary" />
@@ -106,7 +106,7 @@ export function Recommendations() {
                                 Based on your roadmap progress, here are some personalized suggestions to focus on.
                             </CardDescription>
                         </div>
-                        <Button onClick={fetchRecommendations} disabled={isLoading}>
+                        <Button onClick={fetchRecommendations} disabled={isLoading} className="mt-2 md:mt-0 md:flex-shrink-0">
                              {isLoading ? 'Analyzing...' : 'Get Suggestions'}
                         </Button>
                     </div>
