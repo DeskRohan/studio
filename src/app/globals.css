@@ -29,7 +29,7 @@
   }
  
   .dark {
-    --background: 222 47% 11% / 0; /* Transparent to show starfield */
+    --background: 222 47% 11% / 0; /* Transparent to show effect */
     --foreground: 210 40% 98%;
     --card: 222 47% 11%; /* #0A192F - Deep Space Blue (Solid) */
     --card-foreground: 210 40% 98%;
@@ -53,37 +53,31 @@
   }
 }
 
-@keyframes move-stars {
+@keyframes rotate-bg {
   from {
-    transform: translateY(0px);
+    transform: rotate(0deg);
   }
   to {
-    transform: translateY(-2000px);
+    transform: rotate(360deg);
   }
 }
 
 .star-field {
   position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 2000px; /* Taller than viewport to allow for vertical movement */
-  background: hsl(222 47% 11%); /* Solid fallback */
-  background-image: 
-    radial-gradient(1px 1px at 10% 20%, white, rgba(255,255,255,0)),
-    radial-gradient(1px 1px at 80% 30%, white, rgba(255,255,255,0)),
-    radial-gradient(1px 1px at 50% 10%, white, rgba(255,255,255,0)),
-    radial-gradient(1px 1px at 20% 90%, white, rgba(255,255,255,0)),
-    radial-gradient(2px 2px at 40% 50%, white, rgba(255,255,255,0)),
-    radial-gradient(2px 2px at 90% 60%, white, rgba(255,255,255,0)),
-    radial-gradient(2px 2px at 15% 70%, white, rgba(255,255,255,0)),
-    radial-gradient(1px 1px at 65% 85%, white, rgba(255,255,255,0)),
-    radial-gradient(2px 2px at 30% 35%, white, rgba(255,255,255,0)),
-    radial-gradient(1px 1px at 75% 25%, white, rgba(255,255,255,0)),
-    radial-gradient(1px 1px at 25% 75%, white, rgba(255,255,255,0)),
-    radial-gradient(2px 2px at 55% 90%, white, rgba(255,255,255,0));
-  animation: move-stars 150s linear infinite;
-  z-index: -10; /* Place behind all content */
+  left: -100vw;
+  top: -100vh;
+  width: 300vw;
+  height: 300vh;
+  background: hsl(222 47% 11%);
+  background-size: 40px 69px;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 2px, transparent 2px),
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+  animation: rotate-bg 300s linear infinite;
+  z-index: -10;
 }
  
 @layer base {
