@@ -22,7 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox";
-import { ListChecks, Loader2, CheckCircle2, Flame } from "lucide-react";
+import { ListChecks, Loader2, Save, CheckCircle2, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -48,6 +48,7 @@ export function RoadmapTracker() {
   const { toast } = useToast();
   const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [streakData, setStreakData] = useState<StreakData>({ count: 0, lastCompletedDate: ""});
 
   const getRoadmapDocRef = useCallback(() => {
@@ -58,51 +59,55 @@ export function RoadmapTracker() {
     return doc(db, "streaks", "user-streak");
   }, []);
 
+  // Effect to load initial data
   useEffect(() => {
     const roadmapDocRef = getRoadmapDocRef();
-    const streakDocRef = getStreakDocRef();
-
+    
     const setupRoadmap = async () => {
       setIsLoading(true);
       const docSnap = await getDoc(roadmapDocRef);
 
-      if (!docSnap.exists()) {
-        console.log("Roadmap not found, creating a new one.");
+      if (docSnap.exists()) {
+        setRoadmapItems(docSnap.data().items as RoadmapItem[]);
+      } else {
         const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
         await setDoc(roadmapDocRef, { items: newItems });
+        setRoadmapItems(newItems);
       }
-
-      // Now set up the real-time listener
-      const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (doc) => {
-        if (doc.exists()) {
-          setRoadmapItems(doc.data().items as RoadmapItem[]);
-        }
-        setIsLoading(false);
-      }, (error) => {
-        console.error("Error fetching roadmap:", error);
-        toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
-        setIsLoading(false);
-      });
-      
-      return unsubscribeRoadmap;
+      setIsLoading(false);
     };
     
-    const unsubscribePromise = setupRoadmap();
+    setupRoadmap().catch(error => {
+      console.error("Error setting up roadmap:", error);
+      toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
+      setIsLoading(false);
+    });
+  }, [getRoadmapDocRef, toast]);
+  
+  // Effect for real-time listeners
+  useEffect(() => {
+    const roadmapDocRef = getRoadmapDocRef();
+    const streakDocRef = getStreakDocRef();
+
+    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (doc) => {
+      if (doc.exists()) {
+        setRoadmapItems(doc.data().items as RoadmapItem[]);
+      }
+    });
 
     const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
         if (docSnap.exists()) {
             setStreakData(docSnap.data() as StreakData);
         } else {
-            // Document doesn't exist, create it with default values
             setDoc(streakDocRef, { count: 0, lastCompletedDate: "" });
         }
     });
 
     return () => {
-      unsubscribePromise.then(unsub => unsub());
+      unsubscribeRoadmap();
       unsubscribeStreak();
     };
-  }, [getRoadmapDocRef, getStreakDocRef, toast]);
+  }, [getRoadmapDocRef, getStreakDocRef]);
 
 
   const updateStreak = async () => {
@@ -118,50 +123,58 @@ export function RoadmapTracker() {
     let toastMessage = "You've started a new streak! 🔥";
     if (streakData.lastCompletedDate) {
         const lastDate = new Date(streakData.lastCompletedDate);
-        const yesterday = subDays(today, 1);
-        if (format(lastDate, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
+        if (format(lastDate, 'yyyy-MM-dd') === format(subDays(today, 1), 'yyyy-MM-dd')) {
             newStreakCount = streakData.count + 1;
             toastMessage = `Streak extended to ${newStreakCount} days! Keep it up! 🎉`;
         }
     }
     
     const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-    setStreakData(newStreakData);
-    await setDoc(streakDocRef, newStreakData);
+    await setDoc(streakDocRef, newStreakData); // No need to set local state, listener will do it.
     toast({
         title: "Progress!",
         description: toastMessage,
     });
   }
 
-  const handleToggleComplete = async (id: number) => {
-    const docRef = getRoadmapDocRef();
-    if (!docRef) return;
-
-    let wasCompleted = false;
+  const handleToggleComplete = (id: number) => {
     const newItems = roadmapItems.map(item => {
         if (item.id === id) {
-            wasCompleted = !item.completed;
             return { ...item, completed: !item.completed };
         }
         return item;
     });
-
     setRoadmapItems(newItems);
+  };
+  
+  const handleSaveProgress = async () => {
+    setIsSaving(true);
+    const docRef = getRoadmapDocRef();
     try {
-        await setDoc(docRef, { items: newItems }, { merge: true });
-        if (wasCompleted) {
-          updateStreak();
+        await setDoc(docRef, { items: roadmapItems }, { merge: true });
+
+        // Check if any item was completed today for the streak
+        const hasCompletedTopic = roadmapItems.some(item => item.completed);
+        if(hasCompletedTopic) {
+            updateStreak();
         }
+
+        toast({
+            title: "Progress Saved",
+            description: "Your roadmap has been successfully saved.",
+        });
     } catch (error) {
-        console.error("Error updating roadmap:", error);
+        console.error("Error saving roadmap:", error);
         toast({
             title: "Error",
-            description: "Could not sync your progress. It will be saved locally.",
+            description: "Could not save your progress.",
             variant: "destructive",
         });
+    } finally {
+        setIsSaving(false);
     }
-  };
+  }
+
 
   const handleResetProgress = async () => {
     const docRef = getRoadmapDocRef();
@@ -169,7 +182,6 @@ export function RoadmapTracker() {
     if (!docRef || !streakDocRef) return;
 
     const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
-    setRoadmapItems(newItems);
 
     try {
         await setDoc(docRef, { items: newItems });
@@ -206,27 +218,32 @@ export function RoadmapTracker() {
             <div className="flex-1">
                 <CardTitle>Your Progress Tracker</CardTitle>
                 <CardDescription>
-                  Check off items as you complete them. Your progress is saved automatically.
+                  Check off items as you complete them, then click "Save Progress".
                 </CardDescription>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full md:w-auto">Reset Progress</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently reset your roadmap progress and streak.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetProgress}>Continue</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <Button onClick={handleSaveProgress} disabled={isSaving} className="w-full sm:w-auto">
+                    {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
+                    Save Progress
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full sm:w-auto">Reset Progress</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently reset your roadmap progress and streak.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetProgress}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -269,7 +286,7 @@ export function RoadmapTracker() {
       <CardFooter>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span>Your progress is saved in real-time.</span>
+            <span>Your progress is synced from the database in real-time.</span>
           </div>
       </CardFooter>
     </Card>

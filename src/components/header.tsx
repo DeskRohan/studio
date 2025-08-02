@@ -17,7 +17,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Crown, Mic, BookText } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BookOpen, MessageSquare, GraduationCap, Menu, Crown, Mic } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,6 @@ const navItems = [
   { href: "/study-plan", icon: BookOpen, label: "My Roadmap" },
   { href: "/ai-tutor", icon: MessageSquare, label: "AI Tutor" },
   { href: "/ai-interviewer", icon: Mic, label: "AI Interviewer" },
-  { href: "/journal", icon: BookText, label: "Journal" },
   { href: "/architect", icon: User, label: "The Architect" },
 ];
 
