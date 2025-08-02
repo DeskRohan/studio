@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Youtube, Book, Laptop, Rocket, Brain } from "lucide-react";
+import { Youtube, Book, Laptop, Rocket, Brain, PenTool, TestTube, BookMarked } from "lucide-react";
 import Link from "next/link";
 import { Recommendations } from "@/components/resources/recommendations";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,35 +15,36 @@ const placementResources = {
   dsa: [
     { title: "Striver's A2Z DSA Sheet", url: "https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/", icon: Book, description: "The ultimate resource for practicing DSA problems from easy to hard." },
     { title: "Abdul Bari's Algorithms Playlist", url: "https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O", icon: Youtube, description: "Gold standard for understanding core algorithm concepts visually." },
+    { title: "Aditya Verma's DP Playlist", url: "https://www.youtube.com/playlist?list=PL_z_8CaSLPWeT1ffjiImo0sYTcnLzo-wY", icon: Youtube, description: "The definitive guide to mastering Dynamic Programming patterns for interviews." },
   ],
   subjects: [
     { title: "DBMS by Riti Kumari", url: "https://www.youtube.com/playlist?list=PLrL_PSQ6q062cD0vPMGYW_AIpNg6T0_Fq", icon: Youtube, description: "A comprehensive playlist covering all essential DBMS topics for interviews." },
     { title: "Operating Systems - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGz9donHRrE9I3Mwn6XdP8p", icon: Youtube, description: "Clear and concise videos on all important OS concepts." },
     { title: "Computer Networks - Gate Smashers", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiGFBD2-2joCpWOLUrDLvVV_", icon: Youtube, description: "The most popular and effective playlist for understanding Computer Networks." },
   ],
-  aptitude: [
-      { title: "Indiabix", url: "https://www.indiabix.com/", icon: Laptop, description: "A vast collection of aptitude questions and mock tests for practice." },
-      { title: "GeeksforGeeks Aptitude", url: "https://www.geeksforgeeks.org/aptitude-questions-and-answers/", icon: Laptop, description: "A comprehensive platform with a wide range of aptitude questions and detailed solutions." },
-  ],
   projects: [
       { title: "freeCodeCamp Projects", url: "https://www.freecodecamp.org/learn/", icon: Rocket, description: "Build real-world projects with guided tutorials on various tech stacks." },
       { title: "50+ Project Ideas - Traversy Media", url: "https://www.youtube.com/watch?v=Jg6E2CMdV_Y", icon: Youtube, description: "A great video to brainstorm ideas for your next portfolio project." },
+      { title: "JavaScript30", url: "https://javascript30.com/", icon: Laptop, description: "Build 30 things in 30 days with 30 tutorials. No frameworks, no libraries." },
   ]
 };
 
 const gateResources = {
   coreSubjects: [
      { title: "Gate Smashers Playlists", url: "https://www.youtube.com/@GateSmashers/playlists", icon: Youtube, description: "The go-to channel for all core GATE subjects like TOC, COA, Digital Logic, and more." },
-     { title: "Made Easy - CSE", url: "https://www.youtube.com/@MADEASYFORYOU/playlists", icon: Youtube, description: "High-quality lectures and problem-solving sessions for various GATE subjects." },
+     { title: "Ravindrababu Ravula - TOC", url: "https://www.youtube.com/playlist?list=PLEbnTDJUr_Ier_B3fUvU6wV5g_i2i-t3-", icon: Youtube, description: "Highly detailed and conceptual lectures on Theory of Computation." },
+     { title: "Knowledge Gate - Compilers", url: "https://www.youtube.com/playlist?list=PLmXKhU9FNesSDd4hWp_i-s9zRk3b2s-3o", icon: Youtube, description: "A complete playlist covering every phase of Compiler Design for GATE." },
      { title: "GeeksforGeeks GATE CSE", url: "https://www.geeksforgeeks.org/gate-cs-notes-gq/", icon: Book, description: "Structured notes, articles, and quizzes for all GATE CSE subjects." },
   ],
   maths: [
-      { title: "Engineering Mathematics - Saurabh Thakur", url: "https://www.youtube.com/playlist?list=PL_5_i72_h13uJnJ_r4gWIMaFp_b5VjS2s", icon: Youtube, description: "Excellent playlist for mastering Engineering & Discrete Mathematics for GATE." },
-      { title: "Applied Course - GATE", url: "https://www.youtube.com/@AppliedCourse/playlists", icon: Youtube, description: "In-depth videos on complex topics in Engineering Mathematics." },
+      { title: "Discrete Mathematics - by Sudarsan", url: "https://www.youtube.com/playlist?list=PL_mT_b_C4upfrq_hJ3g2y3u2s_2a3sS29", icon: Youtube, description: "An exhaustive playlist covering all topics of Discrete Mathematics for GATE." },
+      { title: "Engineering Mathematics - Saurabh Thakur", url: "https://www.youtube.com/playlist?list=PL_5_i72_h13uJnJ_r4gWIMaFp_b5VjS2s", icon: Youtube, description: "Excellent playlist for mastering Engineering Mathematics concepts." },
+      { title: "GATE Aptitude by Shreyas A", url: "https://www.youtube.com/playlist?list=PL9f_a_5r2jJk8iA4e4h5aJ4_e4L2t3p8u", icon: Youtube, description: "A dedicated series for acing the General Aptitude section of the GATE exam." },
   ],
   practice: [
        { title: "GATE Overflow", url: "https://gateoverflow.in/", icon: Brain, description: "A massive, community-driven collection of previous year questions with detailed solutions." },
        { title: "Unacademy - GATE & ESE", url: "https://www.youtube.com/@UnacademyGATECECH", icon: Laptop, description: "Live classes, PYQ sessions, and test series from top educators." },
+       { title: "Made Easy - PYQ Solutions", url: "https://www.youtube.com/@MADEASYFORYOU/playlists", icon: TestTube, description: "Detailed video solutions for previous years' GATE question papers." },
   ],
 };
 
@@ -82,9 +83,14 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     const loadGoal = () => {
-        const userData = localStorage.getItem(USER_DATA_KEY);
-        const goal = userData ? JSON.parse(userData).goal : 'Placement Preparation';
-        setPrimaryGoal(goal || 'Placement Preparation');
+        try {
+            const userData = localStorage.getItem(USER_DATA_KEY);
+            const goal = userData ? JSON.parse(userData).goal : 'Placement Preparation';
+            setPrimaryGoal(goal || 'Placement Preparation');
+        } catch (error) {
+            console.error("Failed to load user data from localStorage", error);
+            setPrimaryGoal('Placement Preparation');
+        }
     };
 
     loadGoal();
@@ -97,6 +103,7 @@ export default function ResourcesPage() {
           <div className="space-y-8">
                <Skeleton className="h-12 w-1/2" />
                <Skeleton className="h-64 w-full" />
+               <Skeleton className="h-48 w-full" />
                <Skeleton className="h-48 w-full" />
           </div>
       )
@@ -119,7 +126,6 @@ export default function ResourcesPage() {
         <>
             <ResourceSection title="Data Structures & Algorithms" resources={placementResources.dsa} />
             <ResourceSection title="Core CS Subjects" resources={placementResources.subjects} />
-            <ResourceSection title="Aptitude Practice" resources={placementResources.aptitude} />
             <ResourceSection title="Project Development" resources={placementResources.projects} />
         </>
       ) : (
