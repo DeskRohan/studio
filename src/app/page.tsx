@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, CheckCircle } from 'lucide-react';
+import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 
@@ -116,9 +117,9 @@ export default function PasscodePage() {
                         <div className="absolute w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden]">
                             <Card className="w-full h-full card-glow-effect flex flex-col items-center justify-center">
                                 <CardContent className="text-center">
-                                    <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-pulse" />
-                                    <h2 className="text-2xl font-bold">Access Granted!</h2>
-                                    <p className="text-muted-foreground">Redirecting to your dashboard...</p>
+                                    <GraduationCap className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
+                                    <h2 className="text-3xl font-bold text-primary">NextGenSDE</h2>
+                                    <p className="text-muted-foreground">Welcome! Redirecting...</p>
                                 </CardContent>
                             </Card>
                         </div>
