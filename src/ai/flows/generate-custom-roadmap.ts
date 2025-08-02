@@ -28,13 +28,13 @@ const RoadmapPhaseSchema = z.object({
   problemsSolved: z.number().int().describe("The number of problems already solved, which should always be 0 initially."),
 });
 
-export const CustomRoadmapInputSchema = z.object({
+const CustomRoadmapInputSchema = z.object({
   goal: z.string().describe("The user's primary goal, e.g., 'Placement preparation for a product-based company' or 'GATE exam preparation'."),
   timeline: z.string().describe("The user's available timeline, e.g., '3 months', '6 weeks'."),
 });
 export type CustomRoadmapInput = z.infer<typeof CustomRoadmapInputSchema>;
 
-export const CustomRoadmapOutputSchema = z.object({
+const CustomRoadmapOutputSchema = z.object({
   roadmap: z.array(RoadmapPhaseSchema).describe("The generated roadmap, which is an array of phases."),
 });
 export type CustomRoadmapOutput = z.infer<typeof CustomRoadmapOutputSchema>;
