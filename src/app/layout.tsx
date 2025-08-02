@@ -26,7 +26,10 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head />
       <body>
-        <div className="star-field"></div>
+        <div className="star-field">
+          <div className="stars"></div>
+          <div className="twinkling"></div>
+        </div>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
