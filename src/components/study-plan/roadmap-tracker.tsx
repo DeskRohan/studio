@@ -60,27 +60,35 @@ export function RoadmapTracker() {
 
   useEffect(() => {
     const roadmapDocRef = getRoadmapDocRef();
-    
-    // Use onSnapshot for real-time updates. It handles the initial data load as well.
-    const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        // Document exists, load the data from it
-        setRoadmapItems(docSnap.data().items as RoadmapItem[]);
-      } else {
-        // Document doesn't exist, create it with the default roadmap
+    const streakDocRef = getStreakDocRef();
+
+    const setupRoadmap = async () => {
+      setIsLoading(true);
+      const docSnap = await getDoc(roadmapDocRef);
+
+      if (!docSnap.exists()) {
         console.log("Roadmap not found, creating a new one.");
         const newItems = defaultRoadmap.map(item => ({...item, completed: false}));
-        setDoc(roadmapDocRef, { items: newItems });
-        setRoadmapItems(newItems);
+        await setDoc(roadmapDocRef, { items: newItems });
       }
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching roadmap:", error);
-      toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
-      setIsLoading(false);
-    });
 
-    const streakDocRef = getStreakDocRef();
+      // Now set up the real-time listener
+      const unsubscribeRoadmap = onSnapshot(roadmapDocRef, (doc) => {
+        if (doc.exists()) {
+          setRoadmapItems(doc.data().items as RoadmapItem[]);
+        }
+        setIsLoading(false);
+      }, (error) => {
+        console.error("Error fetching roadmap:", error);
+        toast({ title: "Error", description: "Could not load roadmap.", variant: "destructive" });
+        setIsLoading(false);
+      });
+      
+      return unsubscribeRoadmap;
+    };
+    
+    const unsubscribePromise = setupRoadmap();
+
     const unsubscribeStreak = onSnapshot(streakDocRef, (docSnap) => {
         if (docSnap.exists()) {
             setStreakData(docSnap.data() as StreakData);
@@ -90,9 +98,8 @@ export function RoadmapTracker() {
         }
     });
 
-    // Cleanup function to unsubscribe from listeners when the component unmounts
     return () => {
-      unsubscribeRoadmap();
+      unsubscribePromise.then(unsub => unsub());
       unsubscribeStreak();
     };
   }, [getRoadmapDocRef, getStreakDocRef, toast]);
