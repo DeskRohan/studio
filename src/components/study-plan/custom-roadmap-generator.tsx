@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { useAuthState } from 'react-firebase-hooks/auth/dist/index.mjs';
 import { auth } from '@/lib/firebase';
 import { updateUserRoadmap } from '@/services/userData';
 import type { RoadmapPhase } from '@/services/userData';

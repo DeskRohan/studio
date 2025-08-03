@@ -10,7 +10,7 @@ import { motivationalQuotes } from "@/lib/quotes";
 import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
 import { getGreeting } from "@/lib/greetings";
 import { auth } from "@/lib/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { useAuthState } from 'react-firebase-hooks/auth/dist/index.mjs';
 import { getUserData } from "@/services/userData";
 import type { RoadmapPhase, StreakData } from "@/services/userData";
 
