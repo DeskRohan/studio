@@ -3,20 +3,42 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BrainCircuit, Target, BookOpenCheck, LogIn } from 'lucide-react';
+import { Loader2, GraduationCap, BrainCircuit, Target, BookOpenCheck, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
 import { auth, googleProvider } from '@/lib/firebase';
-import { defaultRoadmap } from '@/lib/data';
+import { defaultRoadmap, RoadmapPhase } from '@/lib/data';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const USER_DATA_KEY = 'user-profile-data';
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
+type SetupStep = 'login' | 'roadmap-selection';
+
 export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [setupStep, setSetupStep] = useState<SetupStep>('login');
+  const [timeline, setTimeline] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState('');
+
   const router = useRouter();
   const { toast } = useToast();
 
@@ -36,12 +58,11 @@ export default function WelcomePage() {
   }, [router]);
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+    setIsSigningIn(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Create a profile for the user in local storage
       const userProfile = {
         name: user.displayName,
         email: user.email,
@@ -49,18 +70,18 @@ export default function WelcomePage() {
       };
       localStorage.setItem(USER_DATA_KEY, JSON.stringify(userProfile));
 
-      // Set the default roadmap for a new user
-      if (!localStorage.getItem(ROADMAP_STORAGE_KEY)) {
-          localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
-      }
-
       toast({
         title: "Login Successful",
-        description: `Welcome to NextGenSDE, ${user.displayName}!`,
+        description: `Welcome, ${user.displayName}!`,
       });
-
-      // Redirect to the dashboard
-      router.push('/dashboard');
+      
+      // Check if user is new (no roadmap)
+      if (!localStorage.getItem(ROADMAP_STORAGE_KEY)) {
+        setSetupStep('roadmap-selection');
+        setIsSigningIn(false);
+      } else {
+        router.push('/dashboard');
+      }
 
     } catch (error: any) {
       console.error("Google Sign-In Error:", error);
@@ -69,24 +90,44 @@ export default function WelcomePage() {
         description: 'Could not sign in with Google. Please try again.',
         variant: 'destructive',
       });
-      setIsLoading(false);
+      setIsSigningIn(false);
     }
   };
+  
+  const handleSelectExpertRoadmap = () => {
+      localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
+      toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
+      router.push('/dashboard');
+  };
+
+  const handleGenerateCustomRoadmap = async () => {
+    if (!timeline.trim()) return;
+    setIsGenerating(true);
+    setError('');
+
+    try {
+        const response = await generateCustomRoadmap({ timeline });
+        if (response.roadmap && response.roadmap.length > 0) {
+            localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(response.roadmap));
+            toast({ title: 'Roadmap Generated!', description: 'Your personalized plan is ready.' });
+            router.push('/dashboard');
+        } else {
+            throw new Error("AI returned an empty or invalid roadmap.");
+        }
+    } catch (err) {
+        console.error(err);
+        setError('Failed to generate roadmap. Please check your API key and try again.');
+        setIsGenerating(false);
+    }
+  };
+
 
   if (isLoading) {
     return <SplashScreen />;
   }
-
-  return (
-    <div className="flex min-h-screen w-full flex-col">
-      <header className="flex h-16 items-center justify-between px-4 md:px-8 border-b">
-        <div className="flex items-center gap-2 text-lg font-bold text-primary font-headline">
-          <GraduationCap className="h-6 w-6" />
-          <span>NextGenSDE</span>
-        </div>
-        <ThemeToggle />
-      </header>
-      <main className="flex-1">
+  
+  const renderLogin = () => (
+     <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-background">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-24">
@@ -114,8 +155,8 @@ export default function WelcomePage() {
                   </div>
                 </div>
                 <div className="pt-4">
-                  <Button onClick={handleGoogleSignIn} disabled={isLoading} size="lg">
-                    {isLoading ? (
+                  <Button onClick={handleGoogleSignIn} disabled={isSigningIn} size="lg">
+                    {isSigningIn ? (
                       <Loader2 className="animate-spin" />
                     ) : (
                       <>
@@ -130,6 +171,77 @@ export default function WelcomePage() {
           </div>
         </section>
       </main>
+  );
+
+  const renderRoadmapSelection = () => (
+     <main className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md mx-auto card-glow-effect">
+          <CardHeader>
+            <CardTitle>Choose Your Path</CardTitle>
+            <CardDescription>Select a roadmap to start your journey.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button className="w-full" size="lg">Use Expert's 9-Month Roadmap</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Selection</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will apply the expert-curated 9-month roadmap. You can generate a custom one later if you change your mind.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSelectExpertRoadmap}>Confirm</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-medium">Generate a Custom Plan</label>
+                <Input
+                    placeholder="e.g., 3 months, 6 weeks..."
+                    value={timeline}
+                    onChange={(e) => setTimeline(e.target.value)}
+                    disabled={isGenerating}
+                />
+            </div>
+            {error && <p className="text-sm text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4"/> {error}</p>}
+            
+            <Button
+                className="w-full"
+                onClick={handleGenerateCustomRoadmap}
+                disabled={isGenerating || !timeline.trim()}
+            >
+                {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
+                {isGenerating ? 'Generating...' : 'Generate with AI'}
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+  );
+
+  return (
+    <div className="flex min-h-screen w-full flex-col">
+        <header className="flex h-16 items-center justify-between px-4 md:px-8 border-b">
+             <div className="flex items-center gap-2 text-lg font-bold text-primary font-headline">
+                <GraduationCap className="h-6 w-6" />
+                <span>NextGenSDE</span>
+             </div>
+             {setupStep === 'login' && <ThemeToggle />}
+        </header>
+        {setupStep === 'login' ? renderLogin() : renderRoadmapSelection()}
     </div>
   );
 }

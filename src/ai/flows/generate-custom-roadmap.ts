@@ -29,7 +29,6 @@ const RoadmapPhaseSchema = z.object({
 });
 
 const CustomRoadmapInputSchema = z.object({
-  goal: z.string().describe("The user's primary goal, which will be 'Placement Preparation'."),
   timeline: z.string().describe("The user's available timeline, e.g., '3 months', '6 weeks'."),
 });
 export type CustomRoadmapInput = z.infer<typeof CustomRoadmapInputSchema>;
@@ -47,11 +46,10 @@ const prompt = ai.definePrompt({
   name: 'customRoadmapPrompt',
   input: { schema: CustomRoadmapInputSchema },
   output: { schema: CustomRoadmapOutputSchema },
-  prompt: `You are an expert computer science curriculum designer and career coach. Your task is to create a detailed, phase-by-phase learning roadmap for a student focused on **Placement Preparation**.
+  prompt: `You are an expert computer science curriculum designer and career coach. Your task is to create a detailed, phase-by-phase learning roadmap for a student focused on **Computer Science Placement Preparation**.
 
 The roadmap should be structured, realistic, and comprehensive. It must cover essential Data Structures & Algorithms (DSA), core CS subjects (like DBMS, OS, CN), and practical project development skills.
 
-**User's Goal:** Placement Preparation
 **User's Timeline:** {{{timeline}}}
 
 **Instructions:**
