@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, List, Target, Info, RefreshCcw } from 'lucide-react';
 import { Label } from '../ui/label';
 import { defaultRoadmap } from '@/lib/data';
-import type { RoadmapPhase } from '@/lib/data';
+import type { RoadmapPhase as UIRoadmapPhase } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -36,50 +36,49 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import confetti from 'canvas-confetti';
-
-
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
-const STREAK_STORAGE_KEY = 'user-streak-data';
-const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
-
-type StreakData = {
-    count: number;
-    lastCompletedDate: string;
-}
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase';
+import { getUserData, updateUserRoadmap, updateUserStreak, updateUserConsistency } from '@/services/userData';
+import type { RoadmapPhase, StreakData } from '@/services/userData';
+import { Skeleton } from '../ui/skeleton';
 
 const checkPhaseCompletion = (phase: RoadmapPhase) => {
     const allTopicsDone = phase.topics.every(t => t.completed);
-    const allProblemsDone = phase.problemsSolved === phase.totalProblems;
+    const allProblemsDone = phase.problemsSolved >= phase.totalProblems;
     return allTopicsDone && allProblemsDone;
 }
 
 export function RoadmapAccordion() {
+  const [user, authLoading] = useAuthState(auth);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [activeAccordion, setActiveAccordion] = useState<string>('phase-1');
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadRoadmap = () => {
-        try {
-            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-            if (savedRoadmap) {
-                setRoadmap(JSON.parse(savedRoadmap));
-            } else {
-                setRoadmap(defaultRoadmap);
-            }
-        } catch (error) {
-            console.error('Failed to load or parse roadmap from localStorage:', error);
-            setRoadmap(defaultRoadmap);
-        }
-    };
-    loadRoadmap();
+  const loadRoadmapData = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
+    const data = await getUserData(user.uid);
+    if (data && data.roadmap) {
+        setRoadmap(data.roadmap);
+    } else {
+        setRoadmap([]);
+    }
+    setIsLoading(false);
+  }, [user]);
 
-    window.addEventListener('roadmapUpdated', loadRoadmap);
+  useEffect(() => {
+    if (!authLoading) {
+        loadRoadmapData();
+    }
+    
+    // Listen for custom event from custom roadmap generator
+    window.addEventListener('roadmapUpdated', loadRoadmapData);
 
     return () => {
-        window.removeEventListener('roadmapUpdated', loadRoadmap);
+        window.removeEventListener('roadmapUpdated', loadRoadmapData);
     }
-  }, []);
+  }, [authLoading, loadRoadmapData]);
 
   const triggerConfetti = () => {
     confetti({
@@ -89,21 +88,21 @@ export function RoadmapAccordion() {
     });
   }
 
-  const updateConsistencyAndStreak = useCallback((isProgress: boolean) => {
-    if (!isProgress) return;
+  const updateConsistencyAndStreak = useCallback(async (isProgress: boolean) => {
+    if (!isProgress || !user) return;
 
     try {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const userData = await getUserData(user.uid);
+        if (!userData) return;
 
-        const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
-        const consistency: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
+        const consistency: string[] = userData.consistency ?? [];
         if (!consistency.includes(todayStr)) {
             consistency.push(todayStr);
-            localStorage.setItem(CONSISTENCY_STORAGE_KEY, JSON.stringify(consistency));
+            await updateUserConsistency(user.uid, consistency);
         }
 
-        const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
-        const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
+        const streakData: StreakData = userData.streak ?? { count: 0, lastCompletedDate: "" };
 
         if (streakData.lastCompletedDate === todayStr) return;
 
@@ -119,21 +118,22 @@ export function RoadmapAccordion() {
         }
         
         const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-        localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(newStreakData));
+        await updateUserStreak(user.uid, newStreakData);
         toast({
             title: "Progress!",
             description: toastMessage,
         });
         
-        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('userDataUpdated'));
 
     } catch(e) {
         console.error("Could not update streak/consistency", e);
     }
-  }, [toast]);
+  }, [user, toast]);
 
 
- const handleToggleTopic = (phaseId: number, topicId: number) => {
+ const handleToggleTopic = async (phaseId: number, topicId: number) => {
+    if (!user) return;
     const oldPhaseState = roadmap.find(p => p.id === phaseId);
     if (!oldPhaseState) return;
 
@@ -150,7 +150,7 @@ export function RoadmapAccordion() {
     });
     
     setRoadmap(newRoadmap);
-    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
+    await updateUserRoadmap(user.uid, newRoadmap);
 
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
     const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
@@ -164,12 +164,13 @@ export function RoadmapAccordion() {
     }
 
     const isCompleted = !!newPhaseState.topics.find(t => t.id === topicId)?.completed;
-    updateConsistencyAndStreak(isCompleted);
+    await updateConsistencyAndStreak(isCompleted);
     
-    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('userDataUpdated'));
   };
 
-  const handleProblemsChange = (phaseId: number, newCount: number) => {
+  const handleProblemsChange = async (phaseId: number, newCount: number) => {
+     if (!user) return;
      const oldPhaseState = roadmap.find(p => p.id === phaseId);
      if (!oldPhaseState) return;
 
@@ -184,10 +185,11 @@ export function RoadmapAccordion() {
     });
 
     setRoadmap(newRoadmap);
-    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
+    await updateUserRoadmap(user.uid, newRoadmap);
+
 
     if (isProgress) {
-        updateConsistencyAndStreak(true);
+        await updateConsistencyAndStreak(true);
     }
     
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
@@ -201,13 +203,14 @@ export function RoadmapAccordion() {
         });
     }
 
-    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('userDataUpdated'));
   }
 
-  const handleRestoreDefault = () => {
-    setRoadmap(defaultRoadmap);
-    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
-    window.dispatchEvent(new Event('storage'));
+  const handleRestoreDefault = async () => {
+    if (!user) return;
+    setRoadmap(defaultRoadmap as RoadmapPhase[]);
+    await updateUserRoadmap(user.uid, defaultRoadmap as RoadmapPhase[]);
+    window.dispatchEvent(new Event('userDataUpdated'));
     toast({
       title: "Expert Roadmap Restored",
       description: "The expert's roadmap for placements has been applied.",
@@ -215,7 +218,8 @@ export function RoadmapAccordion() {
   }
 
 
-  const handleResetProgress = () => {
+  const handleResetProgress = async () => {
+    if (!user) return;
     const newRoadmap = roadmap.map(phase => ({
       ...phase,
       problemsSolved: 0,
@@ -226,10 +230,11 @@ export function RoadmapAccordion() {
     }));
     
     setRoadmap(newRoadmap);
-    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
-    localStorage.removeItem(STREAK_STORAGE_KEY);
-    localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
-    window.dispatchEvent(new Event('storage'));
+    await updateUserRoadmap(user.uid, newRoadmap);
+    await updateUserStreak(user.uid, { count: 0, lastCompletedDate: "" });
+    await updateUserConsistency(user.uid, []);
+
+    window.dispatchEvent(new Event('userDataUpdated'));
     toast({
         title: "Progress Reset",
         description: "Your roadmap progress and streak have been reset.",
@@ -242,6 +247,16 @@ export function RoadmapAccordion() {
     if (checkPhaseCompletion(phase)) return { text: 'Completed', variant: 'default' as const };
     if (completedTopics === 0 && phase.problemsSolved === 0) return { text: 'Not Started', variant: 'secondary' as const };
     return { text: 'In Progress', variant: 'outline' as const };
+  }
+
+  if (isLoading || authLoading) {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+    )
   }
 
   return (
@@ -372,7 +387,7 @@ export function RoadmapAccordion() {
           </Accordion>
            <div className="text-xs text-muted-foreground flex items-center gap-2 pl-12">
                 <Info className="h-4 w-4" />
-                <span>Your progress is saved automatically to this device.</span>
+                <span>Your progress is saved automatically and synced across devices.</span>
            </div>
         </div>
     </div>

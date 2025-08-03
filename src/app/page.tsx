@@ -25,10 +25,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { saveUserRoadmap } from '@/services/userData';
 
 
 const USER_DATA_KEY = 'user-profile-data';
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 type SetupStep = 'login' | 'roadmap-selection';
 
@@ -39,6 +41,7 @@ export default function WelcomePage() {
   const [timeline, setTimeline] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [userForSetup, setUserForSetup] = useState<any>(null);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -64,23 +67,22 @@ export default function WelcomePage() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const userProfile = {
-        name: user.displayName,
-        email: user.email,
-        uid: user.uid
-      };
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userProfile));
-
       toast({
         title: "Login Successful",
         description: `Welcome, ${user.displayName}!`,
       });
       
-      // Check if user is new (no roadmap)
-      if (!localStorage.getItem(ROADMAP_STORAGE_KEY)) {
+      // Check if user is new by checking for their document in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // New user, proceed to roadmap selection
+        setUserForSetup(user);
         setSetupStep('roadmap-selection');
         setIsSigningIn(false);
       } else {
+        // Existing user, go to dashboard
         router.push('/dashboard');
       }
 
@@ -95,21 +97,22 @@ export default function WelcomePage() {
     }
   };
   
-  const handleSelectExpertRoadmap = () => {
-      localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
+  const handleSelectExpertRoadmap = async () => {
+      if (!userForSetup) return;
+      await saveUserRoadmap(userForSetup.uid, defaultRoadmap, userForSetup.displayName, userForSetup.email);
       toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
       router.push('/dashboard');
   };
 
   const handleGenerateCustomRoadmap = async () => {
-    if (!timeline.trim()) return;
+    if (!timeline.trim() || !userForSetup) return;
     setIsGenerating(true);
     setError('');
 
     try {
         const response = await generateCustomRoadmap({ timeline });
         if (response.roadmap && response.roadmap.length > 0) {
-            localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(response.roadmap));
+            await saveUserRoadmap(userForSetup.uid, response.roadmap, userForSetup.displayName, userForSetup.email);
             toast({ title: 'Roadmap Generated!', description: 'Your personalized plan is ready.' });
             router.push('/dashboard');
         } else {

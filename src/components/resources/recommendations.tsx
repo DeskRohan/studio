@@ -1,15 +1,16 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Lightbulb, BookOpen, AlertTriangle } from 'lucide-react';
+import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
-import type { RoadmapPhase } from '@/lib/data';
-
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+import type { RoadmapPhase } from '@/services/userData';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase';
+import { getUserData } from '@/services/userData';
 
 type Recommendation = {
     topic: string;
@@ -17,16 +18,14 @@ type Recommendation = {
 };
 
 export function Recommendations() {
+    const [user, authLoading] = useAuthState(auth);
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const findWeakestTopics = () => {
+    const findWeakestTopics = (roadmap: RoadmapPhase[] | undefined) => {
+        if (!roadmap) return [];
         try {
-            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-            if (!savedRoadmap) return [];
-
-            const roadmap: RoadmapPhase[] = JSON.parse(savedRoadmap);
             const topicProgress: { [key: string]: { completed: number, total: number } } = {};
 
             const topicKeywords = [
@@ -71,15 +70,20 @@ export function Recommendations() {
     };
     
     const fetchRecommendations = async () => {
-        const weakestTopics = findWeakestTopics();
-        if (weakestTopics.length === 0) {
-            setError("Could not determine weakest topics. Complete some roadmap items first!");
-            return;
-        }
-
+        if (!user) return;
+        
         setIsLoading(true);
         setError('');
         setRecommendations([]);
+        
+        const userData = await getUserData(user.uid);
+        const weakestTopics = findWeakestTopics(userData?.roadmap);
+
+        if (weakestTopics.length === 0) {
+            setError("Could not determine weakest topics. Complete some roadmap items first!");
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const response = await getLearningRecommendations({ topics: weakestTopics });
@@ -106,7 +110,7 @@ export function Recommendations() {
                                 Based on your roadmap progress, here are some personalized suggestions to focus on.
                             </CardDescription>
                         </div>
-                        <Button onClick={fetchRecommendations} disabled={isLoading} className="mt-2 md:mt-0 md:flex-shrink-0">
+                        <Button onClick={fetchRecommendations} disabled={isLoading || authLoading} className="mt-2 md:mt-0 md:flex-shrink-0">
                              {isLoading ? 'Analyzing...' : 'Get Suggestions'}
                         </Button>
                     </div>

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
-import type { RoadmapPhase } from '@/lib/data';
+import type { RoadmapPhase as UIRoadmapPhase } from '@/lib/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,11 +20,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase';
+import { updateUserRoadmap } from '@/services/userData';
+import type { RoadmapPhase } from '@/services/userData';
 
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 export function CustomRoadmapGenerator() {
+    const [user] = useAuthState(auth);
     const [timeline, setTimeline] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [generatedRoadmap, setGeneratedRoadmap] = useState<RoadmapPhase[] | null>(null);
@@ -43,9 +47,9 @@ export function CustomRoadmapGenerator() {
         setGeneratedRoadmap(null);
 
         try {
-            const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
+            const response = await generateCustomRoadmap({ timeline });
             if (response.roadmap && response.roadmap.length > 0) {
-                setGeneratedRoadmap(response.roadmap);
+                setGeneratedRoadmap(response.roadmap as RoadmapPhase[]);
             } else {
                  throw new Error("AI returned an empty or invalid roadmap.");
             }
@@ -57,9 +61,9 @@ export function CustomRoadmapGenerator() {
         }
     };
 
-    const applyRoadmap = () => {
-        if (!generatedRoadmap) return;
-        localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(generatedRoadmap));
+    const applyRoadmap = async () => {
+        if (!generatedRoadmap || !user) return;
+        await updateUserRoadmap(user.uid, generatedRoadmap);
         setGeneratedRoadmap(null);
         toast({
             title: 'Roadmap Updated!',
