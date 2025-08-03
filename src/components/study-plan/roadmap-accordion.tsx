@@ -36,7 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import confetti from 'canvas-confetti';
-import { useAuthState } from 'react-firebase-hooks/auth/dist/index.mjs';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 import { getUserData, updateUserRoadmap, updateUserStreak, updateUserConsistency } from '@/services/userData';
 import type { RoadmapPhase, StreakData } from '@/services/userData';

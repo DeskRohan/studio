@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
 import type { RoadmapPhase } from '@/services/userData';
-import { useAuthState } from 'react-firebase-hooks/auth/dist/index.mjs';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 import { getUserData } from '@/services/userData';
 

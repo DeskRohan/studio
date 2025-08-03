@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { deleteUserData } from '@/services/userData';
-import { useAuthState } from 'react-firebase-hooks/auth/dist/index.mjs';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 
 export default function ProfilePage() {
