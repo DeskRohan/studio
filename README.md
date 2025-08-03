@@ -3,7 +3,7 @@
 
 **NextGenSDE** is a modern, AI-powered web application designed to help computer science students streamline their preparation for software development placements. It provides a structured roadmap, personalized resources, and intelligent tools to keep users motivated and on track toward their career goals.
 
-The entire application is designed to run locally in the browser, using **local storage** as its database. This means there is no backend server, and all user data (profile, progress, etc.) is stored directly on the user's device.
+The application uses **Cloud Firestore** as its database, linking all user data (profile, progress, etc.) to their Google account for a seamless, cross-device experience.
 
 ---
 
@@ -25,7 +25,9 @@ The entire application is designed to run locally in the browser, using **local 
 
 - **Question Bank:** A filterable and sortable list of curated practice problems from platforms like LeetCode, categorized by topic and difficulty.
 
-- **Local-First Authentication:** A simple, client-side profile creation and login system using a 4-digit passcode, with all data stored locally.
+- **Secure Authentication:** Users can sign in securely with their Google accounts, thanks to Firebase Authentication.
+
+- **Cloud-Synced Data:** All user progress, roadmaps, and streaks are stored in Cloud Firestore, ensuring data is synced across all devices.
 
 - **Responsive & Modern UI:** Built with ShadCN UI and Tailwind CSS, featuring a clean design, dark/light mode, and subtle animations for a great user experience.
 
@@ -35,12 +37,12 @@ The entire application is designed to run locally in the browser, using **local 
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **UI:** [React](https://reactjs.org/)
+- **Database:** [Cloud Firestore](https://firebase.google.com/docs/firestore)
+- **Authentication:** [Firebase Authentication](https://firebase.google.com/docs/auth)
 - **AI/Generative UI:** [Google Gemini & Genkit](https://firebase.google.com/docs/genkit)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 - **Component Library:** [ShadCN/UI](https://ui.shadcn.com/)
 - **Icons:** [Lucide React](https://lucide.dev/)
-- **Animations:** [Framer Motion](https://www.framer.com/motion/) & [TailwindCSS Animate](https://tailwindcss.com/docs/animation)
 
 ---
 
@@ -66,7 +68,8 @@ src
 │   ├── ui/               # Reusable UI components from ShadCN
 │   └── ...               # Other shared components (header, footer, etc.)
 ├── hooks/                # Custom React hooks (e.g., use-toast)
-├── lib/                  # Utility functions, data, and type definitions
+├── lib/                  # Utility functions, data constants, and Firebase config
+├── services/             # Firestore data management services
 └── styles/
     └── globals.css       # Global styles and Tailwind CSS configuration
 ```
@@ -99,26 +102,52 @@ npm install
 
 This project uses Google's Generative AI (Gemini). You need to get an API key to use the AI features.
 
-1.  Create a `.env.local` file in the root of the project.
+1.  Create a `.env` file in the root of the project.
 2.  Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-3.  Add the key to your `.env.local` file:
+3.  Add the key to your `.env` file:
 
 ```
 GEMINI_API_KEY=your_api_key_here
 ```
 
-### 4. Run the Development Server
+### 4. Configure Firebase
+
+The application uses Firebase Authentication and Cloud Firestore.
+1.  Go to your [Firebase Console](https://console.firebase.google.com/) and select your project.
+2.  Go to **Authentication** -> **Settings** -> **Authorized domains** and add `localhost`.
+3.  Go to **Firestore Database** and create a database. Start in **test mode** for easy local development (you can set up security rules later).
+
+### 5. Run the Development Server
 
 ```bash
 npm run dev
 ```
 
-The application should now be running at [http://localhost:3000](http://localhost:3000).
+The application should now be running at `http://localhost:9002`.
+
+---
+
+## 🚢 Deployment
+
+You can deploy this Next.js application to any platform that supports Node.js. Here are the recommended options:
+
+### Vercel (Recommended)
+1.  Push your code to a Git repository (GitHub, GitLab, etc.).
+2.  Sign up and import your project on [Vercel](https://vercel.com/).
+3.  In the Vercel project settings, add your `GEMINI_API_KEY` as an environment variable.
+4.  Vercel will automatically build and deploy your app.
+
+### Netlify
+1.  The project contains a `netlify.toml` file, so it's ready for Netlify.
+2.  Push your code to a Git repository.
+3.  Sign up and import your project on [Netlify](https://www.netlify.com/).
+4.  Add your `GEMINI_API_KEY` as an environment variable in the site settings.
+5.  Netlify will handle the rest.
 
 ---
 
 ## 💡 Important Architectural Notes
 
-- **Local Storage as a Database:** This is a key concept. The entire application state—including user profile, roadmap progress, streak, and consistency—is stored in the browser's `localStorage`. This makes the app fast and serverless but means that data is tied to a single browser on a single device.
-- **AI on the Server (Side):** While the app is client-side, the AI logic is handled by Next.js Server Actions via Genkit flows. These flows run on the server-side when called from the client, securely using the API key from the environment variables.
-- **Authentication:** The "authentication" is purely client-side. It checks for a profile in `localStorage` and asks for a passcode to grant access to the main app, storing a session key in `sessionStorage`.
+- **Cloud Firestore as a Database:** All user-specific data (roadmaps, streaks, progress) is stored in Cloud Firestore and linked to the user's unique Firebase UID. This allows data to be synced across devices.
+- **AI on the Server (Side):** The AI logic is handled by Next.js Server Actions via Genkit flows. These flows run on the server-side when called from the client, securely using the `GEMINI_API_KEY` from the environment variables.
+- **Firebase Authentication:** The
