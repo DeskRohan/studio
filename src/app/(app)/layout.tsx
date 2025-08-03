@@ -12,8 +12,6 @@ import { NivaFab } from '@/components/niva-fab';
 import { SplashScreen } from '@/components/splash-screen';
 import { getOrCreateUserDocument } from '@/services/userData';
 
-const USER_DATA_KEY = 'user-profile-data'; // This can still be used for non-sensitive UI data
-
 export default function AppLayout({
   children,
 }: {
@@ -27,20 +25,11 @@ export default function AppLayout({
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // User is signed in.
-        // Get or create their document in Firestore
+        // Ensure their document exists in Firestore before proceeding.
         await getOrCreateUserDocument(user.uid, user.displayName, user.email);
-        
-        // Store basic info locally for quick access in UI
-        const userProfile = {
-            name: user.displayName,
-            email: user.email,
-            uid: user.uid,
-        };
-        sessionStorage.setItem(USER_DATA_KEY, JSON.stringify(userProfile));
         setIsAuthenticating(false);
       } else {
         // User is signed out.
-        sessionStorage.removeItem(USER_DATA_KEY);
         router.replace('/');
       }
     });

@@ -34,7 +34,6 @@ export default function ProfilePage() {
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            sessionStorage.clear();
             
             toast({
                 title: "Logged Out",
@@ -57,7 +56,6 @@ export default function ProfilePage() {
         try {
             await deleteUserData(user.uid);
             await signOut(auth);
-            sessionStorage.clear();
             
             toast({
                 title: "Account Data Cleared",

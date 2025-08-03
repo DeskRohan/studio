@@ -42,9 +42,6 @@ export function Header() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // Clear all local data on logout
-      localStorage.clear();
-      sessionStorage.clear();
       
       toast({
         title: "Logged Out",
