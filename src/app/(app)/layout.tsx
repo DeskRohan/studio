@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Header, MobileNav } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -10,8 +12,6 @@ import { NivaFab } from '@/components/niva-fab';
 import { SplashScreen } from '@/components/splash-screen';
 
 const USER_DATA_KEY = 'user-profile-data';
-const AUTH_KEY = 'authenticated_v2';
-
 
 export default function AppLayout({
   children,
@@ -23,22 +23,26 @@ export default function AppLayout({
   const [isAuthenticating, setIsAuthenticating] = useState(true);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem(AUTH_KEY);
-    const hasProfile = localStorage.getItem(USER_DATA_KEY);
-
-    if (!hasProfile) {
-        // If no profile exists, send them to the start page to create one
-        router.replace('/');
-        return;
-    }
-
-    if (isAuthenticated !== 'true') {
-        // If there's a profile but they aren't authenticated for the session, lock them out.
-        router.replace('/');
-    } else {
-        // User is authenticated
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in.
+        // Optionally save/update user profile in localStorage
+        const userProfile = {
+            name: user.displayName,
+            email: user.email,
+            uid: user.uid,
+        };
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userProfile));
         setIsAuthenticating(false);
-    }
+      } else {
+        // User is signed out.
+        localStorage.removeItem(USER_DATA_KEY);
+        router.replace('/');
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [router]);
 
 

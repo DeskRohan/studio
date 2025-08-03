@@ -2,9 +2,9 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass } from "lucide-react";
+import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass, UserCircle } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 import {
@@ -13,8 +13,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-
-const AUTH_KEY = 'authenticated_v2';
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 
 const navItems = [
@@ -36,10 +37,24 @@ const desktopNavItems = [
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(AUTH_KEY);
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully signed out.",
+      });
+      router.push('/');
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toast({
+        title: "Logout Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -78,7 +93,7 @@ export function Header() {
                        <Button variant="ghost" size="icon" asChild>
                           <Link href="/profile">
                               <User className="h-5 w-5" />
-                              <span className="sr-only">Profile</span>
+                              <span className="sr-only">My Profile</span>
                           </Link>
                        </Button>
                     </TooltipTrigger>

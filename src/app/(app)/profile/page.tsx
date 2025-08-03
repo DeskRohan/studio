@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { User, Save, KeyRound, Trash2 } from 'lucide-react';
+import { User, Save, KeyRound, Trash2, LogOut, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +27,15 @@ const USER_DATA_KEY = 'user-profile-data';
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 const STREAK_STORAGE_KEY = 'user-streak-data';
 const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
-const AUTH_KEY = 'authenticated_v2';
 
+type UserProfile = {
+    name: string;
+    email: string;
+    uid: string;
+}
 
 export default function ProfilePage() {
-    const [name, setName] = useState('');
-    const [passcode, setPasscode] = useState('');
+    const [user, setUser] = useState<UserProfile | null>(null);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -38,8 +43,11 @@ export default function ProfilePage() {
         try {
             const savedData = localStorage.getItem(USER_DATA_KEY);
             if (savedData) {
-                const { name: savedName } = JSON.parse(savedData);
-                setName(savedName);
+                setUser(JSON.parse(savedData));
+            } else {
+                // If no data, maybe the user isn't logged in correctly.
+                // The layout should handle this, but as a fallback:
+                router.replace('/');
             }
         } catch (error) {
             console.error("Failed to load user data from localStorage", error);
@@ -49,61 +57,49 @@ export default function ProfilePage() {
                 variant: "destructive"
             });
         }
-    }, [toast]);
+    }, [toast, router]);
 
-    const handleSave = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!name.trim()) {
-            toast({ title: "Invalid Name", description: "Name cannot be empty.", variant: "destructive" });
-            return;
-        }
-
-        if (passcode && (passcode.length !== 4 || !/^\d{4}$/.test(passcode))) {
-            toast({ title: "Invalid Passcode", description: "Passcode must be 4 digits, or left empty to keep the old one.", variant: "destructive" });
-            return;
-        }
-
+    const handleLogout = async () => {
         try {
-            const savedData = JSON.parse(localStorage.getItem(USER_DATA_KEY)!);
-            const newData = {
-                ...savedData,
-                name: name.trim(),
-                ...(passcode && { passcode: passcode }), // Only update passcode if a new one is entered
-            };
-            localStorage.setItem(USER_DATA_KEY, JSON.stringify(newData));
+            await signOut(auth);
+            // Clear all local data on logout
+            localStorage.removeItem(USER_DATA_KEY);
+            localStorage.removeItem(ROADMAP_STORAGE_KEY);
+            localStorage.removeItem(STREAK_STORAGE_KEY);
+            localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
+            
             toast({
-                title: "Profile Updated",
-                description: "Your information has been successfully saved.",
+                title: "Logged Out",
+                description: "You have been successfully signed out.",
             });
-            // Optionally clear passcode field after save
-            setPasscode('');
-            // Manually trigger a storage event to update greeting in dashboard and resources page
-            window.dispatchEvent(new Event('storage'));
+            
+            router.push('/');
 
         } catch (error) {
              toast({
-                title: "Error",
-                description: "Could not save your profile data.",
+                title: "Logout Failed",
+                description: "Could not sign you out. Please try again.",
                 variant: "destructive"
             });
         }
-    };
+    }
     
     const handleDeleteAccount = () => {
+        // Note: This only clears local data. It does not delete the Firebase user account.
+        // For a full implementation, you would need a backend function to delete the user from Firebase Auth.
         try {
             localStorage.removeItem(USER_DATA_KEY);
             localStorage.removeItem(ROADMAP_STORAGE_KEY);
             localStorage.removeItem(STREAK_STORAGE_KEY);
             localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
-            sessionStorage.removeItem(AUTH_KEY);
             
             toast({
-                title: "Account Deleted",
-                description: "All your local data has been removed.",
+                title: "Account Data Cleared",
+                description: "All your local data on this device has been removed. Please log out to complete.",
             });
             
-            router.push('/');
+            // We don't log out here automatically to let the user see the message.
+            // The logout button is separate.
 
         } catch (error) {
              toast({
@@ -114,6 +110,10 @@ export default function ProfilePage() {
         }
     }
 
+    if (!user) {
+        return null; // Or a loading spinner
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -121,59 +121,44 @@ export default function ProfilePage() {
                     <User className="h-8 w-8"/>
                     My Profile
                 </h1>
-                <p className="text-muted-foreground">Manage your local profile information.</p>
+                <p className="text-muted-foreground">Manage your profile information.</p>
             </div>
             <Card className="max-w-2xl mx-auto card-glow-effect">
-                <form onSubmit={handleSave}>
-                    <CardHeader>
-                        <CardTitle>Edit Profile</CardTitle>
-                        <CardDescription>
-                            This information is stored only on your current device.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <div className="flex items-center gap-2">
-                                <User className="text-muted-foreground" />
-                                <Input
-                                    id="name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Your Name"
-                                />
-                            </div>
+                <CardHeader>
+                    <CardTitle>Your Information</CardTitle>
+                    <CardDescription>
+                        This information is from your Google account.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <div className="flex items-center gap-2">
+                            <User className="text-muted-foreground" />
+                            <Input id="name" value={user.name} readOnly disabled />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="passcode">New 4-Digit Passcode</Label>
-                             <div className="flex items-center gap-2">
-                                <KeyRound className="text-muted-foreground" />
-                                <Input
-                                    id="passcode"
-                                    type="password"
-                                    value={passcode}
-                                    maxLength={4}
-                                    onChange={(e) => setPasscode(e.target.value)}
-                                    placeholder="Leave empty to keep current passcode"
-                                    className="text-lg tracking-[0.5rem]"
-                                />
-                             </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit">
-                            <Save className="mr-2 h-4 w-4" />
-                            Save Changes
-                        </Button>
-                    </CardFooter>
-                </form>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                         <div className="flex items-center gap-2">
+                            <Mail className="text-muted-foreground" />
+                            <Input id="email" value={user.email} readOnly disabled />
+                         </div>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                    </Button>
+                </CardFooter>
             </Card>
 
             <Card className="max-w-2xl mx-auto border-destructive/50">
                 <CardHeader>
                     <CardTitle className="text-destructive">Danger Zone</CardTitle>
                     <CardDescription>
-                        This is a permanent action. Once you delete your account, all your data including profile, roadmap progress, and streak will be lost.
+                        This action will clear all your progress (roadmap, streak, etc.) from this device. It will NOT delete your Google account.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
@@ -181,19 +166,19 @@ export default function ProfilePage() {
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Account
+                                Clear Local Data
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your account and all associated data from this device.
+                                This action cannot be undone. This will permanently delete your roadmap, streak, and consistency data from this device's local storage.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteAccount}>Yes, Delete My Account</AlertDialogAction>
+                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteAccount}>Yes, Clear My Data</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
