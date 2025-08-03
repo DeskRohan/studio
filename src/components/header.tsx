@@ -2,9 +2,9 @@
 'use client';
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass, UserCircle } from "lucide-react";
+import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 import {
@@ -42,16 +42,21 @@ export function Header() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      // Clear all local data on logout
+      localStorage.clear();
+      sessionStorage.clear();
+      
       toast({
         title: "Logged Out",
         description: "You have been successfully signed out.",
       });
+      
       router.push('/');
+
     } catch (error) {
-      console.error("Logout Error:", error);
-      toast({
+        toast({
         title: "Logout Failed",
-        description: "Something went wrong. Please try again.",
+        description: "Could not sign you out. Please try again.",
         variant: "destructive"
       });
     }
