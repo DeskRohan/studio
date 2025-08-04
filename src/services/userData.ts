@@ -50,24 +50,18 @@ export const generateUserId = (name: string, passcode: string): string => {
 };
 
 /**
- * Fetches user data from Firestore. If the user doesn't exist, it creates a new document.
+ * Fetches user data from Firestore. If the user doesn't exist, it returns null.
  * @param userId - The unique ID of the user.
- * @param defaultData - The default data to create if the user is new.
- * @returns The user's data.
+ * @returns The user's data or null.
  */
-export const getOrCreateUser = async (userId: string, defaultData?: UserData): Promise<UserData | null> => {
+export const getOrCreateUser = async (userId: string): Promise<UserData | null> => {
     const userDocRef = doc(db, 'users', userId);
     const userDocSnap = await getDoc(userDocRef);
 
     if (userDocSnap.exists()) {
         return userDocSnap.data() as UserData;
-    } else {
-        if (defaultData) {
-            await setDoc(userDocRef, defaultData);
-            return defaultData;
-        }
-        return null; // User doesn't exist and no default data provided
-    }
+    } 
+    return null; // User doesn't exist and no default data provided
 };
 
 /**

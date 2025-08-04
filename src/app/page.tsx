@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getOrCreateUser, saveUserRoadmap, generateUserId, getExpertRoadmap } from '@/services/userData';
+import { getOrCreateUser, saveUserData, generateUserId, getExpertRoadmap } from '@/services/userData';
 import type { RoadmapPhase, UserData } from '@/services/userData';
 
 const USER_ID_KEY = 'user-id';
@@ -90,7 +90,8 @@ export default function WelcomePage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!passcode || !name) {
+    const enteredPasscode = (e.target as HTMLFormElement).passcode.value;
+    if (!enteredPasscode || !name) {
       toast({
         title: "Login Failed",
         description: "Please enter your name and passcode.",
@@ -99,14 +100,14 @@ export default function WelcomePage() {
       return;
     }
     
-    const userId = generateUserId(name, passcode);
+    const userId = generateUserId(name, enteredPasscode);
     const existingUser = await getOrCreateUser(userId);
 
     if (existingUser) {
         localStorage.setItem('authenticated', 'true');
         localStorage.setItem(USER_ID_KEY, userId);
         localStorage.setItem(USER_NAME_KEY, name);
-        localStorage.setItem(USER_PASSCODE_KEY, passcode);
+        localStorage.setItem(USER_PASSCODE_KEY, enteredPasscode);
         setIsUnlocked(true);
         setTimeout(() => {
             router.push('/dashboard');
@@ -139,7 +140,7 @@ export default function WelcomePage() {
         consistency: [],
       };
       
-      await getOrCreateUser(userId, userData); // This will create the user with the expert roadmap
+      await saveUserData(userId, userData); // This will create the user with the expert roadmap
       
       toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
       localStorage.setItem('authenticated', 'true');
@@ -171,7 +172,7 @@ export default function WelcomePage() {
               streak: { count: 0, lastCompletedDate: null },
               consistency: [],
             };
-            await getOrCreateUser(userId, userData);
+            await saveUserData(userId, userData);
 
             toast({ title: 'Roadmap Generated!', description: 'Your personalized plan is ready.' });
             localStorage.setItem('authenticated', 'true');
@@ -307,10 +308,10 @@ export default function WelcomePage() {
                 <div className="flex items-center gap-2">
                     <KeyRound className="text-muted-foreground" />
                     <Input
+                        name="passcode"
                         type="password"
                         placeholder="Your 4-digit passcode"
-                        value={passcode}
-                        onChange={(e) => setPasscode(e.target.value)}
+                        defaultValue={passcode}
                         required
                         maxLength={4}
                         pattern="\\d{4}"
