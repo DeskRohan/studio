@@ -9,7 +9,7 @@ import { Loader2, GraduationCap, BrainCircuit, Target, BookOpenCheck, KeyRound, 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
 import { SetupAnimation } from '@/components/setup-animation';
-import { defaultRoadmap, RoadmapPhase } from '@/lib/data';
+import { defaultRoadmap } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
@@ -24,9 +24,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { getOrCreateUser, saveUserRoadmap, generateUserId } from '@/services/userData';
+import type { RoadmapPhase } from '@/services/userData';
 
+const USER_ID_KEY = 'user-id';
+const USER_NAME_KEY = 'user-name';
+const USER_PASSCODE_KEY = 'user-passcode';
 
-const USER_DATA_KEY = 'user-profile-data';
 
 type SetupStep = 'welcome' | 'create-profile' | 'roadmap-selection' | 'login';
 
@@ -50,15 +54,16 @@ export default function WelcomePage() {
 
   useEffect(() => {
     setIsClient(true);
-    const savedData = localStorage.getItem(USER_DATA_KEY);
     const isAuthenticated = localStorage.getItem('authenticated');
+    const userId = localStorage.getItem(USER_ID_KEY);
     
-    if (isAuthenticated === 'true') {
+    if (isAuthenticated === 'true' && userId) {
         router.replace('/dashboard');
         return;
     }
 
-    if (savedData) {
+    // Check if there's a user id but they aren't authenticated
+    if (userId) {
       setSetupStep('login');
     } else {
       setSetupStep('welcome');
@@ -66,11 +71,22 @@ export default function WelcomePage() {
     setIsLoading(false);
   }, [router]);
 
-  const handleCreateProfile = (e: React.FormEvent) => {
+  const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name && passcode) {
-      const userData = { name, passcode, roadmap: defaultRoadmap, streak: { count: 0, lastCompletedDate: null }, consistency: [] };
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+      const userId = generateUserId(name, passcode);
+      const userData = {
+        name,
+        roadmap: defaultRoadmap,
+        streak: { count: 0, lastCompletedDate: null },
+        consistency: [],
+      };
+      await getOrCreateUser(userId, userData);
+
+      localStorage.setItem(USER_ID_KEY, userId);
+      localStorage.setItem(USER_NAME_KEY, name);
+      localStorage.setItem(USER_PASSCODE_KEY, passcode);
+
       toast({
         title: "Profile Created!",
         description: `Welcome, ${name}! Let's set up your roadmap.`,
@@ -79,33 +95,42 @@ export default function WelcomePage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const savedData = localStorage.getItem(USER_DATA_KEY);
-    if (savedData) {
-        const userData = JSON.parse(savedData);
-        if (passcode === userData.passcode) {
-            localStorage.setItem('authenticated', 'true');
-            setIsUnlocked(true); // Trigger setup animation
-            setTimeout(() => {
-                router.push('/dashboard');
-            }, 1500);
-        } else {
-            toast({
-                title: "Login Failed",
-                description: "Incorrect passcode. Please try again.",
-                variant: "destructive",
-            });
-        }
+    if (!passcode || !name) {
+      toast({
+        title: "Login Failed",
+        description: "Please enter your name and passcode.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const userId = generateUserId(name, passcode);
+    const existingUser = await getOrCreateUser(userId);
+
+    if (existingUser) {
+        localStorage.setItem('authenticated', 'true');
+        localStorage.setItem(USER_ID_KEY, userId);
+        localStorage.setItem(USER_NAME_KEY, name);
+        localStorage.setItem(USER_PASSCODE_KEY, passcode);
+        setIsUnlocked(true);
+        setTimeout(() => {
+            router.push('/dashboard');
+        }, 1500);
+    } else {
+        toast({
+            title: "Login Failed",
+            description: "Incorrect name or passcode. Please try again.",
+            variant: "destructive",
+        });
     }
   };
   
-  const handleSelectExpertRoadmap = () => {
-      const savedData = localStorage.getItem(USER_DATA_KEY);
-      if (savedData) {
-          const userData = JSON.parse(savedData);
-          userData.roadmap = defaultRoadmap;
-          localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+  const handleSelectExpertRoadmap = async () => {
+      const userId = localStorage.getItem(USER_ID_KEY);
+      if (userId) {
+          await saveUserRoadmap(userId, defaultRoadmap);
           toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
           localStorage.setItem('authenticated', 'true');
           setIsUnlocked(true); // Trigger setup animation
@@ -122,11 +147,9 @@ export default function WelcomePage() {
 
     try {
         const response = await generateCustomRoadmap({ timeline });
-        const savedData = localStorage.getItem(USER_DATA_KEY);
-        if (savedData && response.roadmap && response.roadmap.length > 0) {
-            const userData = JSON.parse(savedData);
-            userData.roadmap = response.roadmap;
-            localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+        const userId = localStorage.getItem(USER_ID_KEY);
+        if (userId && response.roadmap && response.roadmap.length > 0) {
+            await saveUserRoadmap(userId, response.roadmap as RoadmapPhase[]);
             toast({ title: 'Roadmap Generated!', description: 'Your personalized plan is ready.' });
             localStorage.setItem('authenticated', 'true');
             setIsUnlocked(true);
@@ -196,7 +219,7 @@ export default function WelcomePage() {
         <form onSubmit={handleCreateProfile}>
           <CardHeader>
             <CardTitle>Create Your Profile</CardTitle>
-            <CardDescription>Let's get you set up. This is stored locally.</CardDescription>
+            <CardDescription>Let's get you set up. This is stored securely.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -241,9 +264,21 @@ export default function WelcomePage() {
         <form onSubmit={handleLogin}>
           <CardHeader>
             <CardTitle>Welcome Back!</CardTitle>
-            <CardDescription>Enter your 4-digit passcode to continue.</CardDescription>
+            <CardDescription>Enter your name and passcode to continue.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+             <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <div className="flex items-center gap-2">
+                    <User className="text-muted-foreground" />
+                    <Input
+                        placeholder="Your name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                    />
+                </div>
+            </div>
              <div className="space-y-2">
                 <label className="text-sm font-medium">Passcode</label>
                 <div className="flex items-center gap-2">
@@ -261,7 +296,7 @@ export default function WelcomePage() {
             </div>
              <p className="text-xs text-muted-foreground text-center pt-2">
                 New user or different device?{" "}
-                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => { localStorage.removeItem(USER_DATA_KEY); setSetupStep('create-profile'); }}>
+                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => { localStorage.removeItem(USER_ID_KEY); setSetupStep('create-profile'); }}>
                     Create a new profile.
                 </Button>
             </p>

@@ -20,8 +20,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { clearUserData } from '@/services/userData';
 
-const USER_DATA_KEY = 'user-profile-data';
+
+const USER_ID_KEY = 'user-id';
+const USER_NAME_KEY = 'user-name';
+const USER_PASSCODE_KEY = 'user-passcode';
+
 
 export default function ProfilePage() {
     const [name, setName] = useState('');
@@ -30,16 +35,15 @@ export default function ProfilePage() {
     const router = useRouter();
 
     useEffect(() => {
-        const savedData = localStorage.getItem(USER_DATA_KEY);
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            setName(data.name);
-            setPasscode(data.passcode);
-        }
+        setName(localStorage.getItem(USER_NAME_KEY) || '');
+        setPasscode(localStorage.getItem(USER_PASSCODE_KEY) || '');
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('authenticated');
+        localStorage.removeItem(USER_ID_KEY);
+        localStorage.removeItem(USER_NAME_KEY);
+        localStorage.removeItem(USER_PASSCODE_KEY);
         toast({
             title: "Logged Out",
             description: "You have been successfully signed out.",
@@ -47,14 +51,16 @@ export default function ProfilePage() {
         router.push('/');
     }
     
-    const handleDeleteAccount = () => {
-        localStorage.removeItem(USER_DATA_KEY);
-        localStorage.removeItem('authenticated');
-        toast({
-            title: "Account Data Cleared",
-            description: "All your data has been removed from this device.",
-        });
-        router.push('/');
+    const handleDeleteAccount = async () => {
+        const userId = localStorage.getItem(USER_ID_KEY);
+        if (userId) {
+            await clearUserData(userId);
+            handleLogout();
+            toast({
+                title: "Account Data Cleared",
+                description: "All your data has been removed from this device and the cloud.",
+            });
+        }
     }
 
     return (
@@ -70,7 +76,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <CardTitle>Your Information</CardTitle>
                     <CardDescription>
-                        This information is stored only on this device.
+                        This information is used to access your synced data.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -98,7 +104,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <CardTitle className="text-destructive">Danger Zone</CardTitle>
                     <CardDescription>
-                        This action will permanently delete all your account data from this device, including your roadmap, streak, and progress.
+                        This action will permanently delete all your account data from the cloud, including your roadmap, streak, and progress.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
@@ -113,7 +119,7 @@ export default function ProfilePage() {
                             <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your account and all associated data from this device's local storage.
+                                This action cannot be undone. This will permanently delete your account and all associated data from the cloud.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

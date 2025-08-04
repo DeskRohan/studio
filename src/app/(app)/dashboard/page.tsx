@@ -9,14 +9,15 @@ import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
 import { motivationalQuotes } from "@/lib/quotes";
 import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
 import { getGreeting } from "@/lib/greetings";
-import type { RoadmapPhase } from "@/lib/data";
+import type { RoadmapPhase, UserData } from "@/services/userData";
+import { getUserData } from "@/services/userData";
 
 const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
   ssr: false,
   loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
 });
 
-const USER_DATA_KEY = 'user-profile-data';
+const USER_ID_KEY = 'user-id';
 
 const getStreakBadge = (streak: number): { name: string; icon: string; level: number } => {
   if (streak >= 30) return { name: "Samrat (Emperor)", icon: "👑", level: 4 };
@@ -27,7 +28,7 @@ const getStreakBadge = (streak: number): { name: string; icon: string; level: nu
 };
 
 export default function DashboardPage() {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [completedCount, setCompletedCount] = useState(0);
@@ -37,25 +38,27 @@ export default function DashboardPage() {
   const [quote, setQuote] = useState("");
   const [greeting, setGreeting] = useState('');
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
-    const savedData = localStorage.getItem(USER_DATA_KEY);
-    if (savedData) {
-      const data = JSON.parse(savedData);
-      setUserData(data);
+    const userId = localStorage.getItem(USER_ID_KEY);
+    if (userId) {
+      const data = await getUserData(userId);
+      if (data) {
+        setUserData(data);
 
-      let totalTopics = 0;
-      let completedTopics = 0;
-      data.roadmap.forEach((phase: RoadmapPhase) => {
-        totalTopics += phase.topics.length;
-        completedTopics += phase.topics.filter(topic => topic.completed).length;
-      });
-      setCompletedCount(completedTopics);
-      setTotalCount(totalTopics);
+        let totalTopics = 0;
+        let completedTopics = 0;
+        data.roadmap.forEach((phase: RoadmapPhase) => {
+          totalTopics += phase.topics.length;
+          completedTopics += phase.topics.filter(topic => topic.completed).length;
+        });
+        setCompletedCount(completedTopics);
+        setTotalCount(totalTopics);
 
-      setStreak(data.streak?.count ?? 0);
-      setConsistency(data.consistency ?? []);
-      setGreeting(getGreeting(data.name || 'Student'));
+        setStreak(data.streak?.count ?? 0);
+        setConsistency(data.consistency ?? []);
+        setGreeting(getGreeting(data.name || 'Student'));
+      }
     }
 
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;

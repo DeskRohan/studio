@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
-import type { RoadmapPhase } from '@/lib/data';
+import type { RoadmapPhase } from '@/services/userData';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +21,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { saveUserRoadmap } from '@/services/userData';
 
-const USER_DATA_KEY = 'user-profile-data';
+const USER_ID_KEY = 'user-id';
 
 export function CustomRoadmapGenerator() {
     const [timeline, setTimeline] = useState('');
@@ -57,21 +58,19 @@ export function CustomRoadmapGenerator() {
         }
     };
 
-    const applyRoadmap = () => {
-        if (!generatedRoadmap) return;
-        const savedData = localStorage.getItem(USER_DATA_KEY);
-        if (savedData) {
-            const userData = JSON.parse(savedData);
-            userData.roadmap = generatedRoadmap;
-            localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-            setGeneratedRoadmap(null);
-            toast({
-                title: 'Roadmap Updated!',
-                description: 'Your new personalized roadmap has been applied.',
-            });
-            // Dispatch event to notify other components (like the accordion)
-            window.dispatchEvent(new Event('roadmapUpdated'));
-        }
+    const applyRoadmap = async () => {
+        const userId = localStorage.getItem(USER_ID_KEY);
+        if (!generatedRoadmap || !userId) return;
+        
+        await saveUserRoadmap(userId, generatedRoadmap);
+        
+        setGeneratedRoadmap(null);
+        toast({
+            title: 'Roadmap Updated!',
+            description: 'Your new personalized roadmap has been applied.',
+        });
+        // Dispatch event to notify other components (like the accordion)
+        window.dispatchEvent(new Event('roadmapUpdated'));
     };
 
     return (

@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
-import { RoadmapPhase } from '@/lib/data';
+import { getUserData } from '@/services/userData';
+import type { RoadmapPhase } from '@/services/userData';
+
 
 type Recommendation = {
     topic: string;
     recommendation: string;
 };
 
-const USER_DATA_KEY = 'user-profile-data';
+const USER_ID_KEY = 'user-id';
 
 export function Recommendations() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -72,14 +74,20 @@ export function Recommendations() {
         setError('');
         setRecommendations([]);
 
-        const savedData = localStorage.getItem(USER_DATA_KEY);
-        if (!savedData) {
-            setError("No user data found.");
+        const userId = localStorage.getItem(USER_ID_KEY);
+        if (!userId) {
+            setError("No user data found. Please log in again.");
             setIsLoading(false);
             return;
         }
 
-        const userData = JSON.parse(savedData);
+        const userData = await getUserData(userId);
+        if (!userData) {
+            setError("Could not retrieve user data.");
+            setIsLoading(false);
+            return;
+        }
+
         const weakestTopics = findWeakestTopics(userData.roadmap);
 
         if (weakestTopics.length === 0) {
