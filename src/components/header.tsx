@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/tooltip"
 
 const AUTH_KEY = 'authenticated_v2';
+const USER_DATA_KEY = 'user-profile-data';
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+const STREAK_STORAGE_KEY = 'user-streak-data';
+const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
 
 
 const navItems = [
@@ -39,6 +43,7 @@ export function Header() {
 
   const handleLogout = () => {
     sessionStorage.removeItem(AUTH_KEY);
+    // Keep user profile, but clear session
     router.push('/');
   };
 

@@ -148,6 +148,20 @@ export default function WelcomePage() {
     setShowPrivacyDialog(false);
   }
 
+  const handlePasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+        setPasscode(value);
+    }
+  }
+  
+  const handleNewPasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+        setNewPasscode(value);
+    }
+  }
+
 
     if (isUnlocked) {
         return isNewUser ? <SetupAnimation /> : <SplashScreen />;
@@ -233,15 +247,14 @@ export default function WelcomePage() {
                                             type="password"
                                             maxLength={4}
                                             placeholder="••••"
-                                            required
                                             value={passcode}
-                                            onChange={(e) => setPasscode(e.target.value)}
+                                            onChange={handlePasscodeChange}
                                             className="text-center text-lg tracking-[0.5rem]"
                                         />
                                     </div>
                                 </CardContent>
                                 <CardFooter className="flex flex-col gap-2">
-                                    <Button type="submit" className="w-full" disabled={isLoading}>
+                                    <Button type="submit" className="w-full" disabled={isLoading || passcode.length !== 4}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
                                     Unlock
                                     </Button>
@@ -273,15 +286,14 @@ export default function WelcomePage() {
                                             type="password"
                                             maxLength={4}
                                             placeholder="••••"
-                                            required
                                             value={newPasscode}
-                                            onChange={(e) => setNewPasscode(e.target.value)}
+                                            onChange={handleNewPasscodeChange}
                                             className="text-center text-lg tracking-[0.5rem]"
                                         />
                                     </div>
                                 </CardContent>
                                 <CardFooter className="flex flex-col gap-2">
-                                    <Button type="submit" className="w-full">
+                                    <Button type="submit" className="w-full" disabled={!name.trim() || newPasscode.length !== 4}>
                                         <CheckCircle className="mr-2 h-4 w-4" />
                                         Next: Choose Roadmap
                                     </Button>
