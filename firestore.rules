@@ -1,0 +1,22 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to the expert roadmap.
+    // No one should be able to write to it from the client.
+    match /roadmaps/expert-roadmap {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // This rule allows any client to read and write to any user's document.
+    // This is insecure and only suitable for development or a personal-use
+    // application where the user is trusted. For a public application,
+    // you would need to use Firebase Authentication.
+    // e.g., allow read, write: if request.auth.uid == userId;
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+  }
+}
