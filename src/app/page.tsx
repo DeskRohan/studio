@@ -25,7 +25,7 @@ import { defaultRoadmap } from '@/lib/data';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
 import type { RoadmapPhase } from '@/lib/data';
 import { SetupAnimation } from '@/components/setup-animation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 
@@ -54,17 +54,10 @@ export default function WelcomePage() {
             setIsUnlocked(true);
             setTimeout(() => router.push('/dashboard'), 1000);
         } else {
-            try {
-                const userData = localStorage.getItem(USER_DATA_KEY);
-                if (userData) {
-                    setMode('welcome');
-                } else {
-                    setMode('setup');
-                }
-            } catch (e) {
-                console.error("Could not access localStorage", e);
-                setMode('setup'); 
-            }
+            // No user is signed in, so clear session/local storage
+            sessionStorage.removeItem(AUTH_KEY);
+            localStorage.removeItem(USER_DATA_KEY);
+            setMode('setup'); // Default to setup for new visitors
         }
     });
 
@@ -114,7 +107,6 @@ export default function WelcomePage() {
   }
 
   const handleUseExpertRoadmap = () => {
-    localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
     finishSetup(defaultRoadmap);
   }
 
@@ -127,7 +119,6 @@ export default function WelcomePage() {
      try {
         const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
         if (response.roadmap && response.roadmap.length > 0) {
-            localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(response.roadmap));
             finishSetup(response.roadmap);
         } else {
              throw new Error("AI returned an empty or invalid roadmap.");
@@ -151,15 +142,18 @@ export default function WelcomePage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, newPasscode);
         const user = userCredential.user;
 
+        // Create the user document in Firestore with only essential info
         await setDoc(doc(db, "users", user.uid), {
             name: name.trim(),
             email: user.email,
-            roadmap: roadmapData,
             createdAt: new Date(),
+            roadmap: roadmapData, // Save the chosen roadmap
         });
         
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify({ name: name.trim(), passcode: newPasscode }));
+        // Store minimal data locally
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify({ name: name.trim() }));
         sessionStorage.setItem(AUTH_KEY, 'true');
+        
         setIsNewUser(true);
         setIsUnlocked(true);
         setTimeout(() => router.push('/dashboard'), 2500);
@@ -168,7 +162,8 @@ export default function WelcomePage() {
         if (error.code === 'auth/email-already-in-use') {
              toast({ title: "Passcode Taken", description: "This passcode is already in use. Please choose another.", variant: "destructive" });
         } else {
-             toast({ title: "Setup Failed", description: "An error occurred during setup. Please try again.", variant: "destructive" });
+             console.error("Setup failed:", error);
+             toast({ title: "Setup Failed", description: "An error occurred during setup. Please check the console and try again.", variant: "destructive" });
         }
         setIsLoading(false);
     }
@@ -242,13 +237,13 @@ export default function WelcomePage() {
                             <CardHeader>
                                 <CardTitle className="text-2xl">Welcome!</CardTitle>
                                 <CardDescription>
-                                    You already have a local profile. Login or create a new one.
+                                    Have an account? Log in with your passcode.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-4">
                                 <Button onClick={() => setMode('login')} className="w-full">
                                     <LogIn className="mr-2 h-4 w-4"/>
-                                    Login to Existing Profile
+                                    Login with Passcode
                                 </Button>
                                 <Button onClick={() => setMode('setup')} variant="outline" className="w-full">
                                     <UserPlus className="mr-2 h-4 w-4"/>
@@ -285,8 +280,8 @@ export default function WelcomePage() {
                                     {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
                                     Unlock
                                     </Button>
-                                    <Button variant="link" size="sm" onClick={() => setMode('welcome')}>
-                                        Go Back
+                                    <Button variant="link" size="sm" onClick={() => setMode('setup')}>
+                                        Create a new profile instead
                                     </Button>
                                 </CardFooter>
                             </form>
@@ -297,7 +292,7 @@ export default function WelcomePage() {
                             <CardHeader>
                                 <CardTitle className="text-2xl">Let's Get Started</CardTitle>
                                 <CardDescription>
-                                    Create your local profile to begin your journey.
+                                    Create your profile to begin your journey.
                                 </CardDescription>
                             </CardHeader>
                             <form onSubmit={handleSetupDetails}>
@@ -328,6 +323,9 @@ export default function WelcomePage() {
                                         <Info className="h-4 w-4 shrink-0" />
                                         <span>Your info is saved securely in the cloud.</span>
                                      </p>
+                                      <Button variant="link" size="sm" onClick={() => setMode('login')}>
+                                        Already have an account? Login
+                                    </Button>
                                 </CardFooter>
                             </form>
                         </Card>
@@ -390,7 +388,7 @@ export default function WelcomePage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Important: Data Storage</AlertDialogTitle>
               <AlertDialogDescription>
-                Welcome to NextGenSDE v1.0! Please be aware that your data, including your name, passcode, and roadmap progress, will be stored in a secure cloud database.
+                Welcome to NextGenSDE! Please be aware that your data, including your name, roadmap progress, and an encrypted representation of your passcode, will be stored in a secure cloud database.
                  <br/><br/>
                 Your passcode is used to secure your account. Don't forget it!
               </AlertDialogDescription>

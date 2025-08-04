@@ -73,16 +73,18 @@ export function RoadmapAccordion() {
                 if (userDoc.exists() && userDoc.data().roadmap) {
                     setRoadmap(userDoc.data().roadmap);
                 } else {
-                    setRoadmap(defaultRoadmap);
-                    // If no roadmap in firestore, save the default one
+                    // This case handles a new user who doesn't have a roadmap yet.
+                    // We'll set the default roadmap for them.
                     await updateDoc(userDocRef, { roadmap: defaultRoadmap });
+                    setRoadmap(defaultRoadmap);
                 }
             } catch (error) {
-                console.error('Failed to load roadmap from Firestore:', error);
-                setRoadmap(defaultRoadmap);
+                console.error('Failed to load or set roadmap from Firestore:', error);
+                setRoadmap(defaultRoadmap); // Fallback to default
             }
         } else {
-            setRoadmap(defaultRoadmap);
+            // Not logged in, no roadmap to show
+            setRoadmap([]);
         }
         setIsLoading(false);
     }, []);
@@ -93,9 +95,11 @@ export function RoadmapAccordion() {
         loadRoadmap();
       } else {
         setIsLoading(false);
+        setRoadmap([]);
       }
     });
 
+    // This event is triggered by the custom roadmap generator
     window.addEventListener('roadmapUpdated', loadRoadmap);
 
     return () => {
@@ -282,6 +286,15 @@ export function RoadmapAccordion() {
   if (isLoading) {
       return <div>Loading your roadmap...</div>
   }
+  
+  if (roadmap.length === 0) {
+      return (
+        <Card className="flex flex-col items-center justify-center p-8 text-center">
+            <h3 className="text-xl font-semibold">Welcome!</h3>
+            <p className="text-muted-foreground mt-2">Your roadmap is ready. Start by expanding the first phase.</p>
+        </Card>
+      )
+  }
 
   return (
     <div>
@@ -314,12 +327,12 @@ export function RoadmapAccordion() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently reset your roadmap progress, streak, and consistency data on this device.
+                    This action cannot be undone. This will permanently reset your roadmap progress, streak, and consistency data in the cloud.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetProgress}>Continue</AlertDialogAction>
+                  <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleResetProgress}>Yes, Reset It</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
