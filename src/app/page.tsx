@@ -275,7 +275,7 @@ export default function WelcomePage() {
                   onChange={(e) => setPasscode(e.target.value)}
                   required
                   maxLength={4}
-                  pattern="\d{4}"
+                  pattern="\\d{4}"
                   inputMode="numeric"
                 />
               </div>
@@ -322,7 +322,7 @@ export default function WelcomePage() {
                         onChange={(e) => setPasscode(e.target.value)}
                         required
                         maxLength={4}
-                        pattern="\d{4}"
+                        pattern="\\d{4}"
                         inputMode="numeric"
                     />
                 </div>
