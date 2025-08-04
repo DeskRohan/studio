@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getOrCreateUser, saveUserData, generateUserId, getExpertRoadmap } from '@/services/userData';
+import { getUserData, saveUserData, generateUserId, getExpertRoadmap } from '@/services/userData';
 import type { RoadmapPhase, UserData } from '@/services/userData';
 
 const USER_ID_KEY = 'user-id';
@@ -101,7 +101,7 @@ export default function WelcomePage() {
     }
     
     const userId = generateUserId(name, enteredPasscode);
-    const existingUser = await getOrCreateUser(userId);
+    const existingUser = await getUserData(userId);
 
     if (existingUser) {
         localStorage.setItem('authenticated', 'true');

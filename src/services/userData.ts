@@ -54,7 +54,7 @@ export const generateUserId = (name: string, passcode: string): string => {
  * @param userId - The unique ID of the user.
  * @returns The user's data or null.
  */
-export const getOrCreateUser = async (userId: string): Promise<UserData | null> => {
+export const getUserData = async (userId: string): Promise<UserData | null> => {
     const userDocRef = doc(db, 'users', userId);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -76,22 +76,6 @@ export const getExpertRoadmap = async (): Promise<RoadmapPhase[] | null> => {
     }
     return null;
 }
-
-/**
- * Fetches a user's data from Firestore.
- * @param userId The user's unique ID.
- * @returns The user's data, or null if not found.
- */
-export const getUserData = async (userId: string): Promise<UserData | null> => {
-    const userDocRef = doc(db, 'users', userId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-        return userDocSnap.data() as UserData;
-    }
-    return null;
-}
-
 
 /**
  * Saves the entire user data object to Firestore.
