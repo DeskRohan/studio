@@ -25,15 +25,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
 .env
+.env*.local
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-tsconfig.tsbuildinfo
-
-# cli
-.firebase/

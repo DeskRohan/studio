@@ -3,21 +3,25 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
+// Your web app's Firebase configuration
+// Using environment variables for security and flexibility
 const firebaseConfig = {
-  projectId: "placement-prep-pro-gqvdr",
-  appId: "1:925044498671:web:9094e370dd06941f60fb1a",
-  storageBucket: "placement-prep-pro-gqvdr.firebasestorage.app",
-  apiKey: "AIzaSyAdIPzMqtA8Hpy5anmgUw4uhOYS3uP-6H4",
-  authDomain: "placement-prep-pro-gqvdr.firebaseapp.com",
-  messagingSenderId: "925044498671",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
+
 
 // Initialize Firebase
 let app;
+// Check if an app is already initialized to prevent errors
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
 } else {
-  app = getApps()[0];
+  app = getApps()[0]; // Use the existing app
 }
 
 const db = getFirestore(app);
