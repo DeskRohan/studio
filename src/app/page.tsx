@@ -184,9 +184,14 @@ export default function WelcomePage() {
         } else {
             throw new Error("AI returned an empty or invalid roadmap.");
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        setError('Failed to generate roadmap. Please check your API key and try again.');
+        const errorMessage = err.message || '';
+        if (errorMessage.includes('503') || errorMessage.toLowerCase().includes('overloaded')) {
+            setError('The AI model is currently overloaded. Please wait a moment and try again.');
+        } else {
+            setError('Failed to generate roadmap. Please check your API key and try again.');
+        }
         setIsGenerating(false);
     }
   };
@@ -368,7 +373,7 @@ export default function WelcomePage() {
                     <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                    <span className="bg-card px-2 text-muted-foreground">Or</span>
                 </div>
             </div>
 
@@ -420,7 +425,3 @@ export default function WelcomePage() {
     </div>
   );
 }
-
-    
-
-    

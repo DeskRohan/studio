@@ -50,9 +50,14 @@ export function CustomRoadmapGenerator() {
             } else {
                  throw new Error("AI returned an empty or invalid roadmap.");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError('Failed to generate roadmap. The AI may be busy, or there might be an issue with your API key. Please try again.');
+            const errorMessage = err.message || '';
+            if (errorMessage.includes('503') || errorMessage.toLowerCase().includes('overloaded')) {
+                setError('The AI model is currently overloaded. Please wait a moment and try again.');
+            } else {
+                setError('Failed to generate roadmap. The AI may be busy, or there might be an issue with your API key. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
