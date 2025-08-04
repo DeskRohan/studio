@@ -196,6 +196,14 @@ export default function WelcomePage() {
     }
   };
 
+  const handlePasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    // Only allow numeric input
+    if (/^\d*$/.test(value)) {
+      setPasscode(value);
+    }
+  };
+
 
   if (!isClient || isLoading) {
     return <SplashScreen />;
@@ -272,7 +280,7 @@ export default function WelcomePage() {
                   type="password"
                   placeholder="4-digit passcode"
                   value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
+                  onChange={handlePasscodeChange}
                   required
                   maxLength={4}
                   pattern="\\d{4}"
@@ -319,7 +327,7 @@ export default function WelcomePage() {
                         type="password"
                         placeholder="Your 4-digit passcode"
                         value={passcode}
-                        onChange={(e) => setPasscode(e.target.value)}
+                        onChange={handlePasscodeChange}
                         required
                         maxLength={4}
                         pattern="\\d{4}"
