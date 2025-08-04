@@ -18,7 +18,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Check, List, Target, Info, RefreshCcw } from 'lucide-react';
 import { Label } from '../ui/label';
-import { defaultRoadmap } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -66,11 +65,11 @@ export function RoadmapAccordion() {
   useEffect(() => {
     loadRoadmapData();
     
-    // Listen for custom event from custom roadmap generator
-    window.addEventListener('roadmapUpdated', loadRoadmapData);
+    const handleRoadmapUpdated = () => loadRoadmapData();
+    window.addEventListener('roadmapUpdated', handleRoadmapUpdated);
 
     return () => {
-        window.removeEventListener('roadmapUpdated', loadRoadmapData);
+        window.removeEventListener('roadmapUpdated', handleRoadmapUpdated);
     }
   }, [loadRoadmapData]);
 
@@ -91,30 +90,26 @@ export function RoadmapAccordion() {
       window.dispatchEvent(new Event('userDataUpdated'));
   };
 
-  const updateConsistencyAndStreak = (isProgress: boolean) => {
-    if (!isProgress || !userData) return;
-
+  const updateConsistencyAndStreak = (currentData: UserData): UserData => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const newUserData = { ...userData };
+    let updatedData = { ...currentData };
 
     // Update consistency
-    if (!newUserData.consistency.includes(todayStr)) {
-      newUserData.consistency.push(todayStr);
+    if (!updatedData.consistency.includes(todayStr)) {
+      updatedData.consistency = [...updatedData.consistency, todayStr];
     }
 
     // Update streak
-    const streak = newUserData.streak;
+    const streak = updatedData.streak;
     if (streak.lastCompletedDate !== todayStr) {
       const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
       if (streak.lastCompletedDate === yesterdayStr) {
-        // Extend streak
         streak.count += 1;
         toast({
             title: "Streak Extended!",
             description: `You're now on a ${streak.count} day streak! Keep it up! 🎉`,
         });
       } else {
-        // Start new streak
         streak.count = 1;
         toast({
             title: "New Streak Started!",
@@ -122,20 +117,22 @@ export function RoadmapAccordion() {
         });
       }
       streak.lastCompletedDate = todayStr;
+      updatedData.streak = streak;
     }
     
-    updateUserData(newUserData);
+    return updatedData;
   };
 
   const handleToggleTopic = (phaseId: number, topicId: number) => {
     if (!userData) return;
     
-    const oldPhaseState = userData.roadmap.find(p => p.id === phaseId);
+    let newUserData = { ...userData };
+    const oldPhaseState = newUserData.roadmap.find(p => p.id === phaseId);
     if (!oldPhaseState) return;
-
+    
     const wasPhaseCompletedBefore = checkPhaseCompletion(oldPhaseState);
-
-    const newRoadmap = userData.roadmap.map((phase) => {
+    
+    const newRoadmap = newUserData.roadmap.map((phase) => {
       if (phase.id === phaseId) {
         const newTopics = phase.topics.map((topic) =>
           topic.id === topicId ? { ...topic, completed: !topic.completed } : topic
@@ -145,11 +142,11 @@ export function RoadmapAccordion() {
       return phase;
     });
     
-    const newUserData: UserData = { ...userData, roadmap: newRoadmap };
-    setUserData(newUserData);
+    newUserData = { ...newUserData, roadmap: newRoadmap };
 
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
     const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
+    const isTopicNowCompleted = newPhaseState.topics.find(t => t.id === topicId)!.completed;
 
     if (isPhaseCompletedNow && !wasPhaseCompletedBefore) {
         triggerConfetti();
@@ -159,36 +156,34 @@ export function RoadmapAccordion() {
         });
     }
 
-    const isCompleted = !!newPhaseState.topics.find(t => t.id === topicId)?.completed;
-    updateConsistencyAndStreak(isCompleted);
+    if (isTopicNowCompleted) {
+        newUserData = updateConsistencyAndStreak(newUserData);
+    }
     
-    // Debounced save
-    const userId = localStorage.getItem(USER_ID_KEY);
-    if(userId) saveUserData(userId, newUserData);
+    updateUserData(newUserData);
   };
 
   const handleProblemsChange = (phaseId: number, newCount: number) => {
      if (!userData) return;
-
-     const oldPhaseState = userData.roadmap.find(p => p.id === phaseId);
+    
+     let newUserData = { ...userData };
+     const oldPhaseState = newUserData.roadmap.find(p => p.id === phaseId);
      if (!oldPhaseState) return;
 
      const wasPhaseCompletedBefore = checkPhaseCompletion(oldPhaseState);
      const isProgress = newCount > oldPhaseState.problemsSolved;
 
-     const newRoadmap = userData.roadmap.map((phase) => {
+     const newRoadmap = newUserData.roadmap.map((phase) => {
       if (phase.id === phaseId) {
         return { ...phase, problemsSolved: newCount };
       }
       return phase;
     });
 
-    const newUserData = { ...userData, roadmap: newRoadmap };
-    setUserData(newUserData);
-
+    newUserData = { ...newUserData, roadmap: newRoadmap };
 
     if (isProgress) {
-        updateConsistencyAndStreak(true);
+        newUserData = updateConsistencyAndStreak(newUserData);
     }
     
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
@@ -202,9 +197,7 @@ export function RoadmapAccordion() {
         });
     }
 
-    // Debounced save
-    const userId = localStorage.getItem(USER_ID_KEY);
-    if(userId) saveUserData(userId, newUserData);
+    updateUserData(newUserData);
   }
 
   const handleRestoreDefault = async () => {
@@ -386,3 +379,5 @@ export function RoadmapAccordion() {
     </div>
   );
 }
+
+    
