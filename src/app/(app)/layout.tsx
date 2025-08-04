@@ -8,6 +8,9 @@ import { Footer } from '@/components/footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { NivaFab } from '@/components/niva-fab';
 import { SplashScreen } from '@/components/splash-screen';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
 
 const USER_DATA_KEY = 'user-profile-data';
 const AUTH_KEY = 'authenticated_v2';
@@ -23,22 +26,23 @@ export default function AppLayout({
   const [isAuthenticating, setIsAuthenticating] = useState(true);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem(AUTH_KEY);
-    const hasProfile = localStorage.getItem(USER_DATA_KEY);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in.
+            const isAuthenticated = sessionStorage.getItem(AUTH_KEY);
+            if (isAuthenticated === 'true') {
+                 setIsAuthenticating(false);
+            } else {
+                 router.replace('/');
+            }
+        } else {
+            // User is signed out.
+            router.replace('/');
+        }
+    });
 
-    if (!hasProfile) {
-        // If no profile exists, send them to the start page to create one
-        router.replace('/');
-        return;
-    }
-
-    if (isAuthenticated !== 'true') {
-        // If there's a profile but they aren't authenticated for the session, lock them out.
-        router.replace('/');
-    } else {
-        // User is authenticated
-        setIsAuthenticating(false);
-    }
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [router]);
 
 

@@ -20,12 +20,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
-const USER_DATA_KEY = 'user-profile-data';
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 const STREAK_STORAGE_KEY = 'user-streak-data';
 const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
 const AUTH_KEY = 'authenticated_v2';
+const USER_DATA_KEY = 'user-profile-data';
 
 
 export default function ProfilePage() {
@@ -35,23 +38,19 @@ export default function ProfilePage() {
     const router = useRouter();
 
     useEffect(() => {
-        try {
-            const savedData = localStorage.getItem(USER_DATA_KEY);
-            if (savedData) {
-                const { name: savedName } = JSON.parse(savedData);
-                setName(savedName);
+        const fetchUserData = async () => {
+            if (auth.currentUser) {
+                const userDocRef = doc(db, "users", auth.currentUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    setName(userDoc.data().name);
+                }
             }
-        } catch (error) {
-            console.error("Failed to load user data from localStorage", error);
-            toast({
-                title: "Error",
-                description: "Could not load your profile data.",
-                variant: "destructive"
-            });
-        }
-    }, [toast]);
+        };
+        fetchUserData();
+    }, []);
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!name.trim()) {
@@ -64,21 +63,33 @@ export default function ProfilePage() {
             return;
         }
 
+        if (!auth.currentUser) {
+            toast({ title: "Error", description: "You are not logged in.", variant: "destructive" });
+            return;
+        }
+
         try {
-            const savedData = JSON.parse(localStorage.getItem(USER_DATA_KEY)!);
-            const newData = {
-                ...savedData,
-                name: name.trim(),
-                ...(passcode && { passcode: passcode }), // Only update passcode if a new one is entered
-            };
-            localStorage.setItem(USER_DATA_KEY, JSON.stringify(newData));
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            const dataToUpdate: { name: string, passcode?: string } = { name: name.trim() };
+            if (passcode) {
+                dataToUpdate.passcode = passcode;
+            }
+
+            await updateDoc(userDocRef, dataToUpdate);
+
+            // Update local storage too for consistency
+            const localData = JSON.parse(localStorage.getItem(USER_DATA_KEY) || '{}');
+            localData.name = name.trim();
+            if(passcode) localData.passcode = passcode;
+            localStorage.setItem(USER_DATA_KEY, JSON.stringify(localData));
+
+
             toast({
                 title: "Profile Updated",
                 description: "Your information has been successfully saved.",
             });
-            // Optionally clear passcode field after save
+            
             setPasscode('');
-            // Manually trigger a storage event to update greeting in dashboard and resources page
             window.dispatchEvent(new Event('storage'));
 
         } catch (error) {
@@ -90,17 +101,26 @@ export default function ProfilePage() {
         }
     };
     
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async () => {
+        if (!auth.currentUser) {
+            toast({ title: "Error", description: "You are not logged in.", variant: "destructive" });
+            return;
+        }
         try {
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            await deleteDoc(userDocRef);
+
             localStorage.removeItem(USER_DATA_KEY);
             localStorage.removeItem(ROADMAP_STORAGE_KEY);
             localStorage.removeItem(STREAK_STORAGE_KEY);
             localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
             sessionStorage.removeItem(AUTH_KEY);
             
+            await signOut(auth);
+            
             toast({
                 title: "Account Deleted",
-                description: "All your local data has been removed.",
+                description: "All your data has been removed.",
             });
             
             router.push('/');
@@ -128,7 +148,7 @@ export default function ProfilePage() {
                     <CardHeader>
                         <CardTitle>Edit Profile</CardTitle>
                         <CardDescription>
-                            This information is stored only on your current device.
+                           Your name and passcode are stored securely in Firestore.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -153,7 +173,7 @@ export default function ProfilePage() {
                                     type="password"
                                     value={passcode}
                                     maxLength={4}
-                                    onChange={(e) => setPasscode(e.target.value)}
+                                    onChange={(e) => setPasscode(e.target.value.replace(/[^0-9]/g, ''))}
                                     placeholder="Leave empty to keep current passcode"
                                     className="text-lg tracking-[0.5rem]"
                                 />
@@ -173,7 +193,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <CardTitle className="text-destructive">Danger Zone</CardTitle>
                     <CardDescription>
-                        This is a permanent action. Once you delete your account, all your data including profile, roadmap progress, and streak will be lost.
+                        This is a permanent action. Once you delete your account, all your data including profile, roadmap progress, and streak will be lost from Firestore.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
@@ -188,7 +208,7 @@ export default function ProfilePage() {
                             <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your account and all associated data from this device.
+                                This action cannot be undone. This will permanently delete your account and all associated data from the cloud.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

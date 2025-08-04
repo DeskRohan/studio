@@ -1,43 +1,24 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
 import { motivationalQuotes } from "@/lib/quotes";
-import { defaultRoadmap } from "@/lib/data";
 import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
 import { getGreeting } from "@/lib/greetings";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import type { RoadmapPhase } from '@/lib/data';
 
 const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
   ssr: false,
   loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
 });
 
-const ROADMAP_STORAGE_KEY = "dsa-roadmap-data-v2";
-const STREAK_STORAGE_KEY = "user-streak-data";
-const CONSISTENCY_STORAGE_KEY = "user-consistency-data";
 const USER_DATA_KEY = 'user-profile-data';
-
-
-type RoadmapItem = {
-  id: number;
-  text: string;
-  completed: boolean;
-};
-
-type RoadmapPhase = {
-    id: number;
-    title: string;
-    duration: string;
-    goal: string;
-    topics: RoadmapItem[];
-    practiceGoal: string;
-    totalProblems: number;
-    problemsSolved: number;
-};
 
 type StreakData = {
     count: number;
@@ -61,77 +42,73 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [greeting, setGreeting] = useState('');
 
+  const fetchDashboardData = useCallback(async () => {
+    if (!auth.currentUser) {
+        setIsLoading(false);
+        return;
+    }
+    setIsLoading(true);
+
+    try {
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            
+            // Set Greeting
+            setGreeting(getGreeting(data.name || 'Student'));
+
+            // Process Roadmap
+            const roadmapItems: RoadmapPhase[] = data.roadmap || [];
+            let totalTopics = 0;
+            let completedTopics = 0;
+            roadmapItems.forEach(phase => {
+                totalTopics += phase.topics.length;
+                completedTopics += phase.topics.filter(topic => topic.completed).length;
+            });
+            setCompletedCount(completedTopics);
+            setTotalCount(totalTopics);
+
+            // Process Streak
+            const streakData: StreakData = data.streak || { count: 0, lastCompletedDate: "" };
+            setStreak(streakData.count);
+
+            // Process Consistency
+            const consistencyData: string[] = data.consistency || [];
+            setConsistency(consistencyData);
+        }
+    } catch (error) {
+        console.error("Failed to fetch dashboard data from Firestore:", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     // Quote of the day
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
     setQuote(motivationalQuotes[quoteIndex]);
-
-    const userData = localStorage.getItem(USER_DATA_KEY);
-    const userName = userData ? JSON.parse(userData).name : 'Student';
-    setGreeting(getGreeting(userName));
-
-
-    // Load Roadmap from localStorage
-    const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-    const roadmapItems: RoadmapPhase[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap;
     
-    let totalTopics = 0;
-    let completedTopics = 0;
-    roadmapItems.forEach(phase => {
-        totalTopics += phase.topics.length;
-        completedTopics += phase.topics.filter(topic => topic.completed).length;
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchDashboardData();
+      } else {
+        setIsLoading(false);
+      }
     });
 
-    setCompletedCount(completedTopics);
-    setTotalCount(totalTopics);
-
-    // Load Streak from localStorage
-    const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
-    const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
-    setStreak(streakData.count);
-
-    // Load Consistency from localStorage
-    const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
-    const consistencyData: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
-    setConsistency(consistencyData);
-
-    setIsLoading(false);
-
-    // Listen for changes from other tabs
-     const handleStorageChange = () => {
-        const updatedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-        if (updatedRoadmap) {
-             const newItems: RoadmapPhase[] = JSON.parse(updatedRoadmap);
-             let newTotalTopics = 0;
-             let newCompletedTopics = 0;
-            newItems.forEach(phase => {
-                newTotalTopics += phase.topics.length;
-                newCompletedTopics += phase.topics.filter(topic => topic.completed).length;
-            });
-
-            setCompletedCount(newCompletedTopics);
-            setTotalCount(newTotalTopics);
-        }
-
-        const updatedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
-        if (updatedStreak) {
-            const newStreakData: StreakData = JSON.parse(updatedStreak);
-            setStreak(newStreakData.count);
-        }
-
-        const updatedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
-        if (updatedConsistency) {
-            setConsistency(JSON.parse(updatedConsistency));
-        }
+    // Listen for storage changes from other components (like study plan)
+    const handleStorageChange = () => {
+        fetchDashboardData();
     };
-
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
+        unsubscribe();
         window.removeEventListener('storage', handleStorageChange);
-    }
-
-  }, []);
+    };
+  }, [fetchDashboardData]);
 
   const remainingCount = totalCount - completedCount;
   const streakBadge = getStreakBadge(streak);
@@ -139,7 +116,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">{greeting}</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">{greeting || <Skeleton className="h-9 w-64" />}</h1>
         <p className="text-muted-foreground">An overview of your progress and motivation.</p>
       </div>
       

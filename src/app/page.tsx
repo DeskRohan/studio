@@ -25,6 +25,9 @@ import { defaultRoadmap } from '@/lib/data';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
 import type { RoadmapPhase } from '@/lib/data';
 import { SetupAnimation } from '@/components/setup-animation';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
 
 
 const USER_DATA_KEY = 'user-profile-data';
@@ -46,48 +49,55 @@ export default function WelcomePage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    try {
-      const userData = localStorage.getItem(USER_DATA_KEY);
-      if (userData) {
-        setMode('welcome');
-      } else {
-        setMode('setup');
-      }
-    } catch (e) {
-      console.error("Could not access localStorage", e);
-      setMode('setup'); // Fallback to setup if localStorage is unavailable
-    }
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if(user) {
+            setIsUnlocked(true);
+            setTimeout(() => router.push('/dashboard'), 1000);
+        } else {
+            try {
+                const userData = localStorage.getItem(USER_DATA_KEY);
+                if (userData) {
+                    setMode('welcome');
+                } else {
+                    setMode('setup');
+                }
+            } catch (e) {
+                console.error("Could not access localStorage", e);
+                setMode('setup'); 
+            }
+        }
+    });
 
-  const handleLogin = (e: React.FormEvent) => {
+    return () => unsubscribe();
+  }, [router]);
+
+  const getEmailForPasscode = (passcode: string) => `${passcode}@nextgensde.app`;
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-        try {
-            const userData = JSON.parse(localStorage.getItem(USER_DATA_KEY)!);
-            if (passcode === userData.passcode) {
-                sessionStorage.setItem(AUTH_KEY, 'true');
-                setIsUnlocked(true);
-                setTimeout(() => router.push('/dashboard'), 2500);
-            } else {
-                toast({
-                    title: 'Incorrect Passcode',
-                    description: 'The passcode you entered is not correct. Please try again.',
-                    variant: 'destructive',
-                });
-                setIsLoading(false);
+    try {
+        const email = getEmailForPasscode(passcode);
+        await signInWithEmailAndPassword(auth, email, passcode);
+        const user = auth.currentUser;
+        if (user) {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if(userDoc.exists()) {
+                 localStorage.setItem(USER_DATA_KEY, JSON.stringify({ name: userDoc.data().name, passcode }));
             }
-        } catch (e) {
-             toast({
-                title: 'Login Error',
-                description: 'Could not find profile data. Please try setting up a new profile.',
-                variant: 'destructive',
-            });
-            setIsLoading(false);
-            setMode('setup');
+            sessionStorage.setItem(AUTH_KEY, 'true');
+            setIsUnlocked(true);
+            setTimeout(() => router.push('/dashboard'), 1000);
         }
-    }, 500);
+    } catch (error) {
+        toast({
+            title: 'Incorrect Passcode',
+            description: 'The passcode you entered is not correct. Please try again.',
+            variant: 'destructive',
+        });
+        setIsLoading(false);
+    }
   };
 
   const handleSetupDetails = (e: React.FormEvent) => {
@@ -105,7 +115,7 @@ export default function WelcomePage() {
 
   const handleUseExpertRoadmap = () => {
     localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
-    finishSetup();
+    finishSetup(defaultRoadmap);
   }
 
   const handleGenerateCustomRoadmap = async () => {
@@ -118,7 +128,7 @@ export default function WelcomePage() {
         const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
         if (response.roadmap && response.roadmap.length > 0) {
             localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(response.roadmap));
-            finishSetup();
+            finishSetup(response.roadmap);
         } else {
              throw new Error("AI returned an empty or invalid roadmap.");
         }
@@ -134,13 +144,34 @@ export default function WelcomePage() {
     }
   }
 
-  const finishSetup = () => {
-    const userData = { name: name.trim(), passcode: newPasscode };
-    localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-    sessionStorage.setItem(AUTH_KEY, 'true');
-    setIsNewUser(true);
-    setIsUnlocked(true);
-    setTimeout(() => router.push('/dashboard'), 2500);
+  const finishSetup = async (roadmapData: RoadmapPhase[]) => {
+    setIsLoading(true);
+    try {
+        const email = getEmailForPasscode(newPasscode);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, newPasscode);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+            name: name.trim(),
+            email: user.email,
+            roadmap: roadmapData,
+            createdAt: new Date(),
+        });
+        
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify({ name: name.trim(), passcode: newPasscode }));
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        setIsNewUser(true);
+        setIsUnlocked(true);
+        setTimeout(() => router.push('/dashboard'), 2500);
+
+    } catch (error: any) {
+        if (error.code === 'auth/email-already-in-use') {
+             toast({ title: "Passcode Taken", description: "This passcode is already in use. Please choose another.", variant: "destructive" });
+        } else {
+             toast({ title: "Setup Failed", description: "An error occurred during setup. Please try again.", variant: "destructive" });
+        }
+        setIsLoading(false);
+    }
   }
 
   const confirmPrivacy = () => {
@@ -149,17 +180,13 @@ export default function WelcomePage() {
   }
 
   const handlePasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-        setPasscode(value);
-    }
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setPasscode(value);
   }
   
   const handleNewPasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-        setNewPasscode(value);
-    }
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setNewPasscode(value);
   }
 
 
@@ -299,7 +326,7 @@ export default function WelcomePage() {
                                     </Button>
                                      <p className="text-xs text-muted-foreground flex items-center gap-1.5 text-center mt-2">
                                         <Info className="h-4 w-4 shrink-0" />
-                                        <span>Your info is saved only on this device.</span>
+                                        <span>Your info is saved securely in the cloud.</span>
                                      </p>
                                 </CardFooter>
                             </form>
@@ -361,11 +388,11 @@ export default function WelcomePage() {
         <AlertDialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Important: Local Data Storage</AlertDialogTitle>
+              <AlertDialogTitle>Important: Data Storage</AlertDialogTitle>
               <AlertDialogDescription>
-                Welcome to NextGenSDE v1.0! Please be aware that all your data, including your name, passcode, and roadmap progress, is stored **locally on this device's browser only**.
-                <br/><br/>
-                This means your data will not be accessible on other devices or browsers. Clearing your browser data will permanently delete your profile and progress.
+                Welcome to NextGenSDE v1.0! Please be aware that your data, including your name, passcode, and roadmap progress, will be stored in a secure cloud database.
+                 <br/><br/>
+                Your passcode is used to secure your account. Don't forget it!
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
