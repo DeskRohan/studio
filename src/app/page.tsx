@@ -9,7 +9,6 @@ import { Loader2, GraduationCap, BrainCircuit, Target, BookOpenCheck, KeyRound, 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
 import { SetupAnimation } from '@/components/setup-animation';
-import { defaultRoadmap } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
@@ -22,9 +21,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { getOrCreateUser, saveUserRoadmap, generateUserId } from '@/services/userData';
+import { getOrCreateUser, saveUserRoadmap, generateUserId, getExpertRoadmap } from '@/services/userData';
 import type { RoadmapPhase, UserData } from '@/services/userData';
 
 const USER_ID_KEY = 'user-id';
@@ -76,14 +75,7 @@ export default function WelcomePage() {
     e.preventDefault();
     if (name && passcode) {
       const userId = generateUserId(name, passcode);
-      const userData: UserData = {
-        name,
-        roadmap: defaultRoadmap,
-        streak: { count: 0, lastCompletedDate: null },
-        consistency: [],
-      };
-      await getOrCreateUser(userId, userData);
-
+      // We don't create the user here anymore. We wait for roadmap selection.
       localStorage.setItem(USER_ID_KEY, userId);
       localStorage.setItem(USER_NAME_KEY, name);
       localStorage.setItem(USER_PASSCODE_KEY, passcode);
@@ -129,16 +121,37 @@ export default function WelcomePage() {
   };
   
   const handleSelectExpertRoadmap = async () => {
-      const userId = localStorage.getItem(USER_ID_KEY);
-      if (userId) {
-          await saveUserRoadmap(userId, defaultRoadmap);
-          toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
-          localStorage.setItem('authenticated', 'true');
-          setIsUnlocked(true); // Trigger setup animation
-          setTimeout(() => {
-              router.push('/dashboard');
-          }, 1500);
+    const userId = localStorage.getItem(USER_ID_KEY);
+    const userName = localStorage.getItem(USER_NAME_KEY);
+    if (!userId || !userName) return;
+
+    try {
+      const expertRoadmap = await getExpertRoadmap();
+      if (!expertRoadmap) {
+        toast({ title: "Error", description: "Could not load the expert roadmap. Please try again later.", variant: "destructive" });
+        return;
       }
+      
+      const userData: UserData = {
+        name: userName,
+        roadmap: expertRoadmap,
+        streak: { count: 0, lastCompletedDate: null },
+        consistency: [],
+      };
+      
+      await getOrCreateUser(userId, userData); // This will create the user with the expert roadmap
+      
+      toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
+      localStorage.setItem('authenticated', 'true');
+      setIsUnlocked(true); // Trigger setup animation
+      setTimeout(() => {
+          router.push('/dashboard');
+      }, 1500);
+
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "An unexpected error occurred while setting up your roadmap.", variant: "destructive" });
+    }
   };
 
   const handleGenerateCustomRoadmap = async () => {
@@ -149,8 +162,17 @@ export default function WelcomePage() {
     try {
         const response = await generateCustomRoadmap({ timeline });
         const userId = localStorage.getItem(USER_ID_KEY);
-        if (userId && response.roadmap && response.roadmap.length > 0) {
-            await saveUserRoadmap(userId, response.roadmap as RoadmapPhase[]);
+        const userName = localStorage.getItem(USER_NAME_KEY);
+        if (userId && userName && response.roadmap && response.roadmap.length > 0) {
+            const customRoadmap = response.roadmap as RoadmapPhase[];
+            const userData: UserData = {
+              name: userName,
+              roadmap: customRoadmap,
+              streak: { count: 0, lastCompletedDate: null },
+              consistency: [],
+            };
+            await getOrCreateUser(userId, userData);
+
             toast({ title: 'Roadmap Generated!', description: 'Your personalized plan is ready.' });
             localStorage.setItem('authenticated', 'true');
             setIsUnlocked(true);
@@ -246,7 +268,7 @@ export default function WelcomePage() {
                   onChange={(e) => setPasscode(e.target.value)}
                   required
                   maxLength={4}
-                  pattern="\d{4}"
+                  pattern="\\d{4}"
                 />
               </div>
             </div>
@@ -291,7 +313,7 @@ export default function WelcomePage() {
                         onChange={(e) => setPasscode(e.target.value)}
                         required
                         maxLength={4}
-                        pattern="\d{4}"
+                        pattern="\\d{4}"
                     />
                 </div>
             </div>

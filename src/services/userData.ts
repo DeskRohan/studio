@@ -1,7 +1,6 @@
 
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { defaultRoadmap } from '@/lib/data';
 
 // Define the types for our data structures
 export type RoadmapTopic = {
@@ -70,6 +69,19 @@ export const getOrCreateUser = async (userId: string, defaultData?: UserData): P
         return null; // User doesn't exist and no default data provided
     }
 };
+
+/**
+ * Fetches the expert-curated roadmap from a dedicated Firestore document.
+ * @returns The expert roadmap, or null if not found.
+ */
+export const getExpertRoadmap = async (): Promise<RoadmapPhase[] | null> => {
+    const roadmapDocRef = doc(db, 'roadmaps', 'expert-roadmap');
+    const roadmapDocSnap = await getDoc(roadmapDocRef);
+    if (roadmapDocSnap.exists()) {
+        return (roadmapDocSnap.data() as { roadmap: RoadmapPhase[] }).roadmap;
+    }
+    return null;
+}
 
 /**
  * Fetches a user's data from Firestore.
@@ -162,9 +174,16 @@ export const restoreDefaultRoadmap = async (userId: string): Promise<UserData | 
     const data = await getUserData(userId);
     if (!data) return null;
 
+    const expertRoadmap = await getExpertRoadmap();
+    if (!expertRoadmap) {
+        // Handle case where expert roadmap isn't in DB
+        console.error("Could not find expert roadmap in the database.");
+        return data; 
+    }
+
     const updatedData: UserData = {
         ...data,
-        roadmap: defaultRoadmap,
+        roadmap: expertRoadmap,
         streak: { count: 0, lastCompletedDate: null },
         consistency: [],
     };
