@@ -64,6 +64,7 @@ export default function WelcomePage() {
     // Check if there's a user id but they aren't authenticated
     if (userId) {
       setName(localStorage.getItem(USER_NAME_KEY) || '');
+      setPasscode(localStorage.getItem(USER_PASSCODE_KEY) || '');
       setSetupStep('login');
     } else {
       setSetupStep('welcome');
@@ -90,8 +91,8 @@ export default function WelcomePage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const enteredPasscode = (e.target as HTMLFormElement).passcode.value;
-    if (!enteredPasscode || !name) {
+    
+    if (!passcode || !name) {
       toast({
         title: "Login Failed",
         description: "Please enter your name and passcode.",
@@ -100,14 +101,14 @@ export default function WelcomePage() {
       return;
     }
     
-    const userId = generateUserId(name, enteredPasscode);
+    const userId = generateUserId(name, passcode);
     const existingUser = await getUserData(userId);
 
     if (existingUser) {
         localStorage.setItem('authenticated', 'true');
         localStorage.setItem(USER_ID_KEY, userId);
         localStorage.setItem(USER_NAME_KEY, name);
-        localStorage.setItem(USER_PASSCODE_KEY, enteredPasscode);
+        localStorage.setItem(USER_PASSCODE_KEY, passcode);
         setIsUnlocked(true);
         setTimeout(() => {
             router.push('/dashboard');
@@ -312,7 +313,8 @@ export default function WelcomePage() {
                         name="passcode"
                         type="password"
                         placeholder="Your 4-digit passcode"
-                        defaultValue={passcode}
+                        value={passcode}
+                        onChange={(e) => setPasscode(e.target.value)}
                         required
                         maxLength={4}
                         pattern="\d{4}"
@@ -418,5 +420,7 @@ export default function WelcomePage() {
     </div>
   );
 }
+
+    
 
     
