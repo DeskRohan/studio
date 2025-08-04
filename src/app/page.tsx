@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getOrCreateUser, saveUserRoadmap, generateUserId } from '@/services/userData';
-import type { RoadmapPhase } from '@/services/userData';
+import type { RoadmapPhase, UserData } from '@/services/userData';
 
 const USER_ID_KEY = 'user-id';
 const USER_NAME_KEY = 'user-name';
@@ -64,6 +64,7 @@ export default function WelcomePage() {
 
     // Check if there's a user id but they aren't authenticated
     if (userId) {
+      setName(localStorage.getItem(USER_NAME_KEY) || '');
       setSetupStep('login');
     } else {
       setSetupStep('welcome');
@@ -75,7 +76,7 @@ export default function WelcomePage() {
     e.preventDefault();
     if (name && passcode) {
       const userId = generateUserId(name, passcode);
-      const userData = {
+      const userData: UserData = {
         name,
         roadmap: defaultRoadmap,
         streak: { count: 0, lastCompletedDate: null },
@@ -296,7 +297,7 @@ export default function WelcomePage() {
             </div>
              <p className="text-xs text-muted-foreground text-center pt-2">
                 New user or different device?{" "}
-                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => { localStorage.removeItem(USER_ID_KEY); setSetupStep('create-profile'); }}>
+                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => { localStorage.clear(); setSetupStep('create-profile'); setName(''); setPasscode(''); }}>
                     Create a new profile.
                 </Button>
             </p>

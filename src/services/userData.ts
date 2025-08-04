@@ -56,7 +56,7 @@ export const generateUserId = (name: string, passcode: string): string => {
  * @param defaultData - The default data to create if the user is new.
  * @returns The user's data.
  */
-export const getOrCreateUser = async (userId: string, defaultData?: Omit<UserData, 'name'> & { name: string }): Promise<UserData | null> => {
+export const getOrCreateUser = async (userId: string, defaultData?: UserData): Promise<UserData | null> => {
     const userDocRef = doc(db, 'users', userId);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -64,14 +64,8 @@ export const getOrCreateUser = async (userId: string, defaultData?: Omit<UserDat
         return userDocSnap.data() as UserData;
     } else {
         if (defaultData) {
-            const newUser: UserData = {
-                name: defaultData.name,
-                roadmap: defaultRoadmap,
-                streak: { count: 0, lastCompletedDate: null },
-                consistency: [],
-            };
-            await setDoc(userDocRef, newUser);
-            return newUser;
+            await setDoc(userDocRef, defaultData);
+            return defaultData;
         }
         return null; // User doesn't exist and no default data provided
     }
@@ -105,13 +99,20 @@ export const saveUserData = async (userId: string, userData: UserData): Promise<
 
 /**
  * Saves a new roadmap to the user's document in Firestore.
+ * This also resets the streak and consistency data.
  * @param userId - The unique ID of the user.
  * @param roadmap - The new roadmap array.
  */
 export const saveUserRoadmap = async (userId: string, roadmap: RoadmapPhase[]): Promise<void> => {
   const userDocRef = doc(db, 'users', userId);
-  await updateDoc(userDocRef, { roadmap });
+  const newRoadmapData = {
+    roadmap: roadmap,
+    streak: { count: 0, lastCompletedDate: null },
+    consistency: [],
+  };
+  await updateDoc(userDocRef, newRoadmapData);
 };
+
 
 /**
  * Deletes a user's data from Firestore.
