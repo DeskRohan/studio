@@ -18,8 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Check, List, Target, Info, RefreshCcw } from 'lucide-react';
 import { Label } from '../ui/label';
-import { defaultRoadmap } from '@/lib/data';
-import type { RoadmapPhase as UIRoadmapPhase } from '@/lib/data';
+import { defaultRoadmap, RoadmapPhase } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -36,11 +35,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import confetti from 'canvas-confetti';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
-import { getUserData, updateUserRoadmap, updateUserStreak, updateUserConsistency } from '@/services/userData';
-import type { RoadmapPhase, StreakData } from '@/services/userData';
 import { Skeleton } from '../ui/skeleton';
+
+const USER_DATA_KEY = 'user-profile-data';
 
 const checkPhaseCompletion = (phase: RoadmapPhase) => {
     const allTopicsDone = phase.topics.every(t => t.completed);
@@ -49,28 +46,22 @@ const checkPhaseCompletion = (phase: RoadmapPhase) => {
 }
 
 export function RoadmapAccordion() {
-  const [user, authLoading] = useAuthState(auth);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [activeAccordion, setActiveAccordion] = useState<string>('phase-1');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const loadRoadmapData = useCallback(async () => {
-    if (!user) return;
+  const loadRoadmapData = useCallback(() => {
     setIsLoading(true);
-    const data = await getUserData(user.uid);
-    if (data && data.roadmap) {
-        setRoadmap(data.roadmap);
-    } else {
-        setRoadmap([]);
+    const savedData = localStorage.getItem(USER_DATA_KEY);
+    if (savedData) {
+      setRoadmap(JSON.parse(savedData).roadmap);
     }
     setIsLoading(false);
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    if (!authLoading) {
-        loadRoadmapData();
-    }
+    loadRoadmapData();
     
     // Listen for custom event from custom roadmap generator
     window.addEventListener('roadmapUpdated', loadRoadmapData);
@@ -78,7 +69,7 @@ export function RoadmapAccordion() {
     return () => {
         window.removeEventListener('roadmapUpdated', loadRoadmapData);
     }
-  }, [authLoading, loadRoadmapData]);
+  }, [loadRoadmapData]);
 
   const triggerConfetti = () => {
     confetti({
@@ -88,52 +79,50 @@ export function RoadmapAccordion() {
     });
   }
 
-  const updateConsistencyAndStreak = useCallback(async (isProgress: boolean) => {
-    if (!isProgress || !user) return;
+  const updateConsistencyAndStreak = (isProgress: boolean) => {
+    if (!isProgress) return;
 
-    try {
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-        const userData = await getUserData(user.uid);
-        if (!userData) return;
+    const savedData = localStorage.getItem(USER_DATA_KEY);
+    if (!savedData) return;
 
-        const consistency: string[] = userData.consistency ?? [];
-        if (!consistency.includes(todayStr)) {
-            consistency.push(todayStr);
-            await updateUserConsistency(user.uid, consistency);
-        }
+    const userData = JSON.parse(savedData);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-        const streakData: StreakData = userData.streak ?? { count: 0, lastCompletedDate: "" };
-
-        if (streakData.lastCompletedDate === todayStr) return;
-
-        let newStreakCount = 1;
-        let toastMessage = "You've started a new streak! 🔥";
-        
-        if (streakData.lastCompletedDate) {
-            const lastDate = new Date(streakData.lastCompletedDate);
-            if (format(subDays(new Date(), 1), 'yyyy-MM-dd') === format(lastDate, 'yyyy-MM-dd')) {
-                newStreakCount = streakData.count + 1;
-                toastMessage = `Streak extended to ${newStreakCount} days! Keep it up! 🎉`;
-            }
-        }
-        
-        const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-        await updateUserStreak(user.uid, newStreakData);
-        toast({
-            title: "Progress!",
-            description: toastMessage,
-        });
-        
-        window.dispatchEvent(new Event('userDataUpdated'));
-
-    } catch(e) {
-        console.error("Could not update streak/consistency", e);
+    // Update consistency
+    if (!userData.consistency.includes(todayStr)) {
+      userData.consistency.push(todayStr);
     }
-  }, [user, toast]);
 
+    // Update streak
+    const streak = userData.streak;
+    if (streak.lastCompletedDate === todayStr) {
+      // Already completed today, do nothing
+    } else {
+      const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+      if (streak.lastCompletedDate === yesterdayStr) {
+        // Extend streak
+        streak.count += 1;
+        toast({
+            title: "Streak Extended!",
+            description: `You're now on a ${streak.count} day streak! Keep it up! 🎉`,
+        });
+      } else {
+        // Start new streak
+        streak.count = 1;
+        toast({
+            title: "New Streak Started!",
+            description: "You've completed an item for the first time in a while. 🔥",
+        });
+      }
+      streak.lastCompletedDate = todayStr;
+    }
+    
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    // Dispatch event to notify other components (like dashboard)
+    window.dispatchEvent(new Event('userDataUpdated'));
+  };
 
- const handleToggleTopic = async (phaseId: number, topicId: number) => {
-    if (!user) return;
+  const handleToggleTopic = (phaseId: number, topicId: number) => {
     const oldPhaseState = roadmap.find(p => p.id === phaseId);
     if (!oldPhaseState) return;
 
@@ -150,7 +139,13 @@ export function RoadmapAccordion() {
     });
     
     setRoadmap(newRoadmap);
-    await updateUserRoadmap(user.uid, newRoadmap);
+    
+    const savedData = localStorage.getItem(USER_DATA_KEY);
+    if (savedData) {
+      const userData = JSON.parse(savedData);
+      userData.roadmap = newRoadmap;
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    }
 
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
     const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
@@ -164,13 +159,10 @@ export function RoadmapAccordion() {
     }
 
     const isCompleted = !!newPhaseState.topics.find(t => t.id === topicId)?.completed;
-    await updateConsistencyAndStreak(isCompleted);
-    
-    window.dispatchEvent(new Event('userDataUpdated'));
+    updateConsistencyAndStreak(isCompleted);
   };
 
-  const handleProblemsChange = async (phaseId: number, newCount: number) => {
-     if (!user) return;
+  const handleProblemsChange = (phaseId: number, newCount: number) => {
      const oldPhaseState = roadmap.find(p => p.id === phaseId);
      if (!oldPhaseState) return;
 
@@ -185,11 +177,16 @@ export function RoadmapAccordion() {
     });
 
     setRoadmap(newRoadmap);
-    await updateUserRoadmap(user.uid, newRoadmap);
 
+    const savedData = localStorage.getItem(USER_DATA_KEY);
+    if (savedData) {
+      const userData = JSON.parse(savedData);
+      userData.roadmap = newRoadmap;
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    }
 
     if (isProgress) {
-        await updateConsistencyAndStreak(true);
+        updateConsistencyAndStreak(true);
     }
     
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
@@ -202,43 +199,47 @@ export function RoadmapAccordion() {
             description: `Awesome work on finishing ${newPhaseState.title}. On to the next challenge!`,
         });
     }
-
-    window.dispatchEvent(new Event('userDataUpdated'));
   }
 
-  const handleRestoreDefault = async () => {
-    if (!user) return;
-    setRoadmap(defaultRoadmap as RoadmapPhase[]);
-    await updateUserRoadmap(user.uid, defaultRoadmap as RoadmapPhase[]);
-    window.dispatchEvent(new Event('userDataUpdated'));
-    toast({
-      title: "Expert Roadmap Restored",
-      description: "The expert's roadmap for placements has been applied.",
-    });
+  const handleRestoreDefault = () => {
+    const savedData = localStorage.getItem(USER_DATA_KEY);
+    if (savedData) {
+      const userData = JSON.parse(savedData);
+      userData.roadmap = defaultRoadmap;
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+      setRoadmap(defaultRoadmap);
+      window.dispatchEvent(new Event('userDataUpdated'));
+      toast({
+        title: "Expert Roadmap Restored",
+        description: "The expert's roadmap for placements has been applied.",
+      });
+    }
   }
 
 
-  const handleResetProgress = async () => {
-    if (!user) return;
-    const newRoadmap = roadmap.map(phase => ({
-      ...phase,
-      problemsSolved: 0,
-      topics: phase.topics.map(topic => ({
-        ...topic,
-        completed: false,
-      })),
-    }));
-    
-    setRoadmap(newRoadmap);
-    await updateUserRoadmap(user.uid, newRoadmap);
-    await updateUserStreak(user.uid, { count: 0, lastCompletedDate: "" });
-    await updateUserConsistency(user.uid, []);
-
-    window.dispatchEvent(new Event('userDataUpdated'));
-    toast({
-        title: "Progress Reset",
-        description: "Your roadmap progress and streak have been reset.",
-    });
+  const handleResetProgress = () => {
+    const savedData = localStorage.getItem(USER_DATA_KEY);
+    if (savedData) {
+      const userData = JSON.parse(savedData);
+      const newRoadmap = userData.roadmap.map((phase: RoadmapPhase) => ({
+        ...phase,
+        problemsSolved: 0,
+        topics: phase.topics.map(topic => ({
+          ...topic,
+          completed: false,
+        })),
+      }));
+      userData.roadmap = newRoadmap;
+      userData.streak = { count: 0, lastCompletedDate: null };
+      userData.consistency = [];
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+      setRoadmap(newRoadmap);
+      window.dispatchEvent(new Event('userDataUpdated'));
+      toast({
+          title: "Progress Reset",
+          description: "Your roadmap progress and streak have been reset.",
+      });
+    }
   }
 
   const getPhaseStatus = (phase: RoadmapPhase) => {
@@ -249,7 +250,7 @@ export function RoadmapAccordion() {
     return { text: 'In Progress', variant: 'outline' as const };
   }
 
-  if (isLoading || authLoading) {
+  if (isLoading) {
     return (
         <div className="space-y-4">
             <Skeleton className="h-24 w-full" />
@@ -387,7 +388,7 @@ export function RoadmapAccordion() {
           </Accordion>
            <div className="text-xs text-muted-foreground flex items-center gap-2 pl-12">
                 <Info className="h-4 w-4" />
-                <span>Your progress is saved automatically and synced across devices.</span>
+                <span>Your progress is saved automatically to this device.</span>
            </div>
         </div>
     </div>

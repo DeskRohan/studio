@@ -7,18 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
-import type { RoadmapPhase } from '@/services/userData';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
-import { getUserData } from '@/services/userData';
+import { RoadmapPhase } from '@/lib/data';
 
 type Recommendation = {
     topic: string;
     recommendation: string;
 };
 
+const USER_DATA_KEY = 'user-profile-data';
+
 export function Recommendations() {
-    const [user, authLoading] = useAuthState(auth);
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -70,14 +68,19 @@ export function Recommendations() {
     };
     
     const fetchRecommendations = async () => {
-        if (!user) return;
-        
         setIsLoading(true);
         setError('');
         setRecommendations([]);
-        
-        const userData = await getUserData(user.uid);
-        const weakestTopics = findWeakestTopics(userData?.roadmap);
+
+        const savedData = localStorage.getItem(USER_DATA_KEY);
+        if (!savedData) {
+            setError("No user data found.");
+            setIsLoading(false);
+            return;
+        }
+
+        const userData = JSON.parse(savedData);
+        const weakestTopics = findWeakestTopics(userData.roadmap);
 
         if (weakestTopics.length === 0) {
             setError("Could not determine weakest topics. Complete some roadmap items first!");
@@ -110,7 +113,7 @@ export function Recommendations() {
                                 Based on your roadmap progress, here are some personalized suggestions to focus on.
                             </CardDescription>
                         </div>
-                        <Button onClick={fetchRecommendations} disabled={isLoading || authLoading} className="mt-2 md:mt-0 md:flex-shrink-0">
+                        <Button onClick={fetchRecommendations} disabled={isLoading} className="mt-2 md:mt-0 md:flex-shrink-0">
                              {isLoading ? 'Analyzing...' : 'Get Suggestions'}
                         </Button>
                     </div>

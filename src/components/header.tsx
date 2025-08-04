@@ -13,8 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -39,24 +37,13 @@ export function Header() {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      
-      toast({
+  const handleLogout = () => {
+    localStorage.removeItem('authenticated');
+    toast({
         title: "Logged Out",
         description: "You have been successfully signed out.",
-      });
-      
-      router.push('/');
-
-    } catch (error) {
-        toast({
-        title: "Logout Failed",
-        description: "Could not sign you out. Please try again.",
-        variant: "destructive"
-      });
-    }
+    });
+    router.push('/');
   };
 
   return (

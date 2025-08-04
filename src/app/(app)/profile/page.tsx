@@ -7,10 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { User, KeyRound, Trash2, LogOut, Mail } from 'lucide-react';
+import { User, KeyRound, Trash2, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,59 +20,41 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteUserData } from '@/services/userData';
-import { useAuthState } from 'react-firebase-hooks/auth';
 
+const USER_DATA_KEY = 'user-profile-data';
 
 export default function ProfilePage() {
-    const [user, loading] = useAuthState(auth);
+    const [name, setName] = useState('');
+    const [passcode, setPasscode] = useState('');
     const { toast } = useToast();
     const router = useRouter();
 
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            
-            toast({
-                title: "Logged Out",
-                description: "You have been successfully signed out.",
-            });
-            
-            router.push('/');
-
-        } catch (error) {
-             toast({
-                title: "Logout Failed",
-                description: "Could not sign you out. Please try again.",
-                variant: "destructive"
-            });
+    useEffect(() => {
+        const savedData = localStorage.getItem(USER_DATA_KEY);
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            setName(data.name);
+            setPasscode(data.passcode);
         }
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('authenticated');
+        toast({
+            title: "Logged Out",
+            description: "You have been successfully signed out.",
+        });
+        router.push('/');
     }
     
-    const handleDeleteAccount = async () => {
-        if (!user) return;
-        try {
-            await deleteUserData(user.uid);
-            await signOut(auth);
-            
-            toast({
-                title: "Account Data Cleared",
-                description: "All your data has been removed. You have been logged out.",
-            });
-
-            router.push('/');
-            
-        } catch (error) {
-             toast({
-                title: "Error",
-                description: "Could not delete your account data. Please try again.",
-                variant: "destructive"
-            });
-        }
-    }
-
-    if (loading || !user) {
-        return null; // Or a loading spinner
+    const handleDeleteAccount = () => {
+        localStorage.removeItem(USER_DATA_KEY);
+        localStorage.removeItem('authenticated');
+        toast({
+            title: "Account Data Cleared",
+            description: "All your data has been removed from this device.",
+        });
+        router.push('/');
     }
 
     return (
@@ -84,29 +64,26 @@ export default function ProfilePage() {
                     <User className="h-8 w-8"/>
                     My Profile
                 </h1>
-                <p className="text-muted-foreground">Manage your profile information.</p>
+                <p className="text-muted-foreground">Manage your profile information and account settings.</p>
             </div>
             <Card className="max-w-2xl mx-auto card-glow-effect">
                 <CardHeader>
                     <CardTitle>Your Information</CardTitle>
                     <CardDescription>
-                        This information is from your Google account.
+                        This information is stored only on this device.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
-                        <div className="flex items-center gap-2">
-                            <User className="text-muted-foreground" />
-                            <Input id="name" value={user.displayName || ''} readOnly disabled />
-                        </div>
+                        <Input id="name" value={name} readOnly disabled />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                         <div className="flex items-center gap-2">
-                            <Mail className="text-muted-foreground" />
-                            <Input id="email" value={user.email || ''} readOnly disabled />
-                         </div>
+                        <Label htmlFor="passcode">Passcode</Label>
+                        <div className="flex items-center gap-2">
+                            <KeyRound className="text-muted-foreground" />
+                            <Input id="passcode" type="password" value={passcode} readOnly disabled />
+                        </div>
                     </div>
                 </CardContent>
                 <CardFooter>
@@ -121,7 +98,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <CardTitle className="text-destructive">Danger Zone</CardTitle>
                     <CardDescription>
-                        This action will permanently delete all your account data from our servers, including your roadmap, streak, and progress.
+                        This action will permanently delete all your account data from this device, including your roadmap, streak, and progress.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
@@ -129,14 +106,14 @@ export default function ProfilePage() {
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Account Data
+                                Clear Account Data
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your account and all associated data from our servers.
+                                This action cannot be undone. This will permanently delete your account and all associated data from this device's local storage.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

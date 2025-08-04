@@ -1,15 +1,14 @@
-
 # NextGenSDE: Your Personalized Placement Preparation Hub
 
 **NextGenSDE** is a modern, AI-powered web application designed to help computer science students streamline their preparation for software development placements. It provides a structured roadmap, personalized resources, and intelligent tools to keep users motivated and on track toward their career goals.
 
-The application uses **Cloud Firestore** as its database, linking all user data (profile, progress, etc.) to their Google account for a seamless, cross-device experience.
+**Important Note:** This application runs entirely on the client-side. All user data (profile, progress, streak, roadmap) is stored in the browser's **local storage**. There is no backend database, meaning data is tied to the specific browser and device you use it on.
 
 ---
 
 ## ✨ Key Features
 
-- ** Personalized Dashboard:** A central hub that provides a quick overview of the user's progress, including topics completed, topics remaining, current day streak, and a visual consistency tracker.
+- **Personalized Dashboard:** A central hub that provides a quick overview of the user's progress, including topics completed, topics remaining, current day streak, and a visual consistency tracker.
 
 - **Dynamic Study Roadmap:**
     - **Expert-Curated Plan:** A default 9-month, phase-by-phase roadmap covering essential DSA, core CS subjects, and development skills.
@@ -25,9 +24,7 @@ The application uses **Cloud Firestore** as its database, linking all user data 
 
 - **Question Bank:** A filterable and sortable list of curated practice problems from platforms like LeetCode, categorized by topic and difficulty.
 
-- **Secure Authentication:** Users can sign in securely with their Google accounts, thanks to Firebase Authentication.
-
-- **Cloud-Synced Data:** All user progress, roadmaps, and streaks are stored in Cloud Firestore, ensuring data is synced across all devices.
+- **Local-First Authentication:** Users create a local profile with a simple name and a 4-digit passcode, which is stored securely on their device.
 
 - **Responsive & Modern UI:** Built with ShadCN UI and Tailwind CSS, featuring a clean design, dark/light mode, and subtle animations for a great user experience.
 
@@ -37,8 +34,7 @@ The application uses **Cloud Firestore** as its database, linking all user data 
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Database:** [Cloud Firestore](https://firebase.google.com/docs/firestore)
-- **Authentication:** [Firebase Authentication](https://firebase.google.com/docs/auth)
+- **State Management:** [React Hooks](https://reactjs.org/docs/hooks-intro.html) & Local Storage
 - **AI/Generative UI:** [Google Gemini & Genkit](https://firebase.google.com/docs/genkit)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 - **Component Library:** [ShadCN/UI](https://ui.shadcn.com/)
@@ -68,8 +64,7 @@ src
 │   ├── ui/               # Reusable UI components from ShadCN
 │   └── ...               # Other shared components (header, footer, etc.)
 ├── hooks/                # Custom React hooks (e.g., use-toast)
-├── lib/                  # Utility functions, data constants, and Firebase config
-├── services/             # Firestore data management services
+├── lib/                  # Utility functions, data constants, etc.
 └── styles/
     └── globals.css       # Global styles and Tailwind CSS configuration
 ```
@@ -110,14 +105,7 @@ This project uses Google's Generative AI (Gemini). You need to get an API key to
 GEMINI_API_KEY=your_api_key_here
 ```
 
-### 4. Configure Firebase
-
-The application uses Firebase Authentication and Cloud Firestore.
-1.  Go to your [Firebase Console](https://console.firebase.google.com/) and select your project.
-2.  Go to **Authentication** -> **Settings** -> **Authorized domains** and add `localhost`.
-3.  Go to **Firestore Database** and create a database. Start in **test mode** for easy local development (you can set up security rules later).
-
-### 5. Run the Development Server
+### 4. Run the Development Server
 
 ```bash
 npm run dev
@@ -148,6 +136,6 @@ You can deploy this Next.js application to any platform that supports Node.js. H
 
 ## 💡 Important Architectural Notes
 
-- **Cloud Firestore as a Database:** All user-specific data (roadmaps, streaks, progress) is stored in Cloud Firestore and linked to the user's unique Firebase UID. This allows data to be synced across devices.
+- **Local Storage as a Database:** All user-specific data (profile, roadmap, streaks, progress) is stored in the browser's local storage. This means that all data is confined to the device and browser it was created on. It will not sync across devices.
 - **AI on the Server (Side):** The AI logic is handled by Next.js Server Actions via Genkit flows. These flows run on the server-side when called from the client, securely using the `GEMINI_API_KEY` from the environment variables.
-- **Firebase Authentication:** The
+- **Simple Passcode Authentication:** The app uses a simple passcode system. The passcode is stored in local storage, and authentication is managed on the client side. This is for demonstration purposes and is not a secure authentication method for a production application with sensitive data.

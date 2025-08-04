@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
-import type { RoadmapPhase as UIRoadmapPhase } from '@/lib/data';
+import type { RoadmapPhase } from '@/lib/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,14 +21,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
-import { updateUserRoadmap } from '@/services/userData';
-import type { RoadmapPhase } from '@/services/userData';
 
+const USER_DATA_KEY = 'user-profile-data';
 
 export function CustomRoadmapGenerator() {
-    const [user] = useAuthState(auth);
     const [timeline, setTimeline] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [generatedRoadmap, setGeneratedRoadmap] = useState<RoadmapPhase[] | null>(null);
@@ -61,16 +57,21 @@ export function CustomRoadmapGenerator() {
         }
     };
 
-    const applyRoadmap = async () => {
-        if (!generatedRoadmap || !user) return;
-        await updateUserRoadmap(user.uid, generatedRoadmap);
-        setGeneratedRoadmap(null);
-        toast({
-            title: 'Roadmap Updated!',
-            description: 'Your new personalized roadmap has been applied.',
-        });
-        // Dispatch event to notify other components (like the accordion)
-        window.dispatchEvent(new Event('roadmapUpdated'));
+    const applyRoadmap = () => {
+        if (!generatedRoadmap) return;
+        const savedData = localStorage.getItem(USER_DATA_KEY);
+        if (savedData) {
+            const userData = JSON.parse(savedData);
+            userData.roadmap = generatedRoadmap;
+            localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+            setGeneratedRoadmap(null);
+            toast({
+                title: 'Roadmap Updated!',
+                description: 'Your new personalized roadmap has been applied.',
+            });
+            // Dispatch event to notify other components (like the accordion)
+            window.dispatchEvent(new Event('roadmapUpdated'));
+        }
     };
 
     return (
