@@ -1,6 +1,7 @@
 
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { defaultRoadmap } from '@/lib/data';
 
 // Define the types for our data structures
 export type RoadmapTopic = {
@@ -65,21 +66,27 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
 };
 
 /**
- * Fetches the expert-curated roadmap from a dedicated Firestore document.
- * @returns The expert roadmap, or null if not found.
+ * Fetches the expert-curated roadmap. It first tries from Firestore,
+ * and if it fails, it falls back to the local defaultRoadmap data.
+ * @returns The expert roadmap.
  */
-export const getExpertRoadmap = async (): Promise<RoadmapPhase[] | null> => {
-    const roadmapDocRef = doc(db, 'roadmaps', 'expert-roadmap');
-    const roadmapDocSnap = await getDoc(roadmapDocRef);
-    if (roadmapDocSnap.exists()) {
-        return (roadmapDocSnap.data() as { roadmap: RoadmapPhase[] }).roadmap;
+export const getExpertRoadmap = async (): Promise<RoadmapPhase[]> => {
+    try {
+        const roadmapDocRef = doc(db, 'roadmaps', 'expert-roadmap');
+        const roadmapDocSnap = await getDoc(roadmapDocRef);
+        if (roadmapDocSnap.exists()) {
+            return (roadmapDocSnap.data() as { roadmap: RoadmapPhase[] }).roadmap;
+        }
+    } catch (error) {
+        console.error("Error fetching expert roadmap from Firestore, using local fallback:", error);
     }
-    return null;
+    // Fallback to local data if Firestore fetch fails or doc doesn't exist
+    return defaultRoadmap;
 }
 
 /**
  * Saves the entire user data object to Firestore.
- * Uses set with merge to prevent errors if the document doesn't exist.
+ * Uses set with merge to create the document if it doesn't exist or update it if it does.
  * @param userId - The unique ID of the user.
  * @param userData - The complete user data object.
  */
@@ -91,6 +98,7 @@ export const saveUserData = async (userId: string, userData: UserData): Promise<
 /**
  * Saves a new roadmap to the user's document in Firestore.
  * This also resets the streak and consistency data.
+ * Uses set with merge to be robust.
  * @param userId - The unique ID of the user.
  * @param roadmap - The new roadmap array.
  */
@@ -155,9 +163,11 @@ export const restoreDefaultRoadmap = async (userId: string): Promise<UserData | 
     if (!data) return null;
 
     const expertRoadmap = await getExpertRoadmap();
+    
+    // The getExpertRoadmap function now includes a fallback, so this check is for safety,
+    // but it should always return a roadmap.
     if (!expertRoadmap) {
-        // Handle case where expert roadmap isn't in DB
-        console.error("Could not find expert roadmap in the database.");
+        console.error("Could not find expert roadmap in the database or local files.");
         return data; 
     }
 
