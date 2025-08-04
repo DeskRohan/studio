@@ -290,7 +290,7 @@ export default function WelcomePage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">Create Profile</Button>
+            <Button type="submit" className="w-full" disabled={!name || passcode.length !== 4}>Create Profile</Button>
           </CardFooter>
         </form>
       </Card>
@@ -343,7 +343,7 @@ export default function WelcomePage() {
             </p>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">Unlock</Button>
+            <Button type="submit" className="w-full" disabled={!name || passcode.length !== 4}>Unlock</Button>
           </CardFooter>
         </form>
       </Card>
@@ -433,3 +433,5 @@ export default function WelcomePage() {
     </div>
   );
 }
+
+    
