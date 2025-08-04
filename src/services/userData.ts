@@ -1,6 +1,6 @@
 
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
 // Define the types for our data structures
 export type RoadmapTopic = {
@@ -79,6 +79,7 @@ export const getExpertRoadmap = async (): Promise<RoadmapPhase[] | null> => {
 
 /**
  * Saves the entire user data object to Firestore.
+ * Uses set with merge to prevent errors if the document doesn't exist.
  * @param userId - The unique ID of the user.
  * @param userData - The complete user data object.
  */
@@ -100,7 +101,8 @@ export const saveUserRoadmap = async (userId: string, roadmap: RoadmapPhase[]): 
     streak: { count: 0, lastCompletedDate: null },
     consistency: [],
   };
-  await updateDoc(userDocRef, newRoadmapData);
+  // Use set with merge to create the doc if it doesn't exist, or update if it does.
+  await setDoc(userDocRef, newRoadmapData, { merge: true });
 };
 
 
@@ -169,5 +171,3 @@ export const restoreDefaultRoadmap = async (userId: string): Promise<UserData | 
     await saveUserData(userId, updatedData);
     return updatedData;
 };
-
-    
