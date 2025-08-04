@@ -1,437 +1,183 @@
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BrainCircuit, Target, BookOpenCheck, KeyRound, User, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { SplashScreen } from '@/components/splash-screen';
-import { SetupAnimation } from '@/components/setup-animation';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { getUserData, saveUserData, generateUserId, getExpertRoadmap } from '@/services/userData';
-import type { RoadmapPhase, UserData } from '@/services/userData';
+import { useState, useEffect, useCallback } from "react";
+import dynamic from 'next/dynamic';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
+import { motivationalQuotes } from "@/lib/quotes";
+import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
+import { getGreeting } from "@/lib/greetings";
+import type { RoadmapPhase, UserData } from "@/services/userData";
+import { getUserData, saveUserData, getExpertRoadmap } from "@/services/userData";
 
-const USER_ID_KEY = 'user-id';
-const USER_NAME_KEY = 'user-name';
-const USER_PASSCODE_KEY = 'user-passcode';
+const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
+});
 
+const getStreakBadge = (streak: number): { name: string; icon: string; level: number } => {
+  if (streak >= 30) return { name: "Samrat (Emperor)", icon: "👑", level: 4 };
+  if (streak >= 15) return { name: "Yodha (Warrior)", icon: "⚔️", level: 3 };
+  if (streak >= 7) return { name: "Sainik (Soldier)", icon: "🛡️", level: 2 };
+  if (streak >= 1) return { name: "Prarambhik (Beginner)", icon: "🌱", level: 1 };
+  return { name: "No Streak", icon: "✖️", level: 0 };
+};
 
-type SetupStep = 'welcome' | 'create-profile' | 'roadmap-selection' | 'login';
+const DEFAULT_USER_ID = "default-user";
+const DEFAULT_USER_NAME = "Student";
 
-export default function WelcomePage() {
+export default function DashboardPage() {
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
-  const [setupStep, setSetupStep] = useState<SetupStep>('welcome');
-  const [isUnlocked, setIsUnlocked] = useState(false);
 
-  // Profile creation state
-  const [name, setName] = useState('');
-  const [passcode, setPasscode] = useState('');
+  const [completedCount, setCompletedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [consistency, setConsistency] = useState<string[]>([]);
+  const [quote, setQuote] = useState("");
+  const [greeting, setGreeting] = useState('');
 
-  // Roadmap generation state
-  const [timeline, setTimeline] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState('');
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    let data = await getUserData(DEFAULT_USER_ID);
 
-  const router = useRouter();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    setIsClient(true);
-    const isAuthenticated = localStorage.getItem('authenticated');
-    const userId = localStorage.getItem(USER_ID_KEY);
-    
-    if (isAuthenticated === 'true' && userId) {
-        router.replace('/dashboard');
-        return;
-    }
-
-    // Check if there's a user id but they aren't authenticated
-    if (userId) {
-      setName(localStorage.getItem(USER_NAME_KEY) || '');
-      setPasscode(localStorage.getItem(USER_PASSCODE_KEY) || '');
-      setSetupStep('login');
-    } else {
-      setSetupStep('welcome');
-    }
-    setIsLoading(false);
-  }, [router]);
-
-  const handleCreateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name && passcode) {
-      const userId = generateUserId(name, passcode);
-      // We don't create the user here anymore. We wait for roadmap selection.
-      localStorage.setItem(USER_ID_KEY, userId);
-      localStorage.setItem(USER_NAME_KEY, name);
-      localStorage.setItem(USER_PASSCODE_KEY, passcode);
-
-      toast({
-        title: "Profile Created!",
-        description: `Welcome, ${name}! Let's set up your roadmap.`,
-      });
-      setSetupStep('roadmap-selection');
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!passcode || !name) {
-      toast({
-        title: "Login Failed",
-        description: "Please enter your name and passcode.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const userId = generateUserId(name, passcode);
-    const existingUser = await getUserData(userId);
-
-    if (existingUser) {
-        localStorage.setItem('authenticated', 'true');
-        localStorage.setItem(USER_ID_KEY, userId);
-        localStorage.setItem(USER_NAME_KEY, name);
-        localStorage.setItem(USER_PASSCODE_KEY, passcode);
-        setIsUnlocked(true);
-        setTimeout(() => {
-            router.push('/dashboard');
-        }, 1500);
-    } else {
-        toast({
-            title: "Login Failed",
-            description: "Incorrect name or passcode. Please try again.",
-            variant: "destructive",
-        });
-    }
-  };
-  
-  const handleSelectExpertRoadmap = async () => {
-    const userId = localStorage.getItem(USER_ID_KEY);
-    const userName = localStorage.getItem(USER_NAME_KEY);
-    if (!userId || !userName) return;
-
-    try {
+    if (!data) {
+      // Create a default user profile if one doesn't exist
       const expertRoadmap = await getExpertRoadmap();
-      if (!expertRoadmap) {
-        toast({ title: "Error", description: "Could not load the expert roadmap. Please try again later.", variant: "destructive" });
-        return;
-      }
-      
-      const userData: UserData = {
-        name: userName,
+      const newUserData: UserData = {
+        name: DEFAULT_USER_NAME,
         roadmap: expertRoadmap,
         streak: { count: 0, lastCompletedDate: null },
         consistency: [],
       };
-      
-      await saveUserData(userId, userData); // This will create the user with the expert roadmap
-      
-      toast({ title: "Let's Get Started!", description: "The expert's roadmap has been applied." });
-      localStorage.setItem('authenticated', 'true');
-      setIsUnlocked(true); // Trigger setup animation
-      setTimeout(() => {
-          router.push('/dashboard');
-      }, 1500);
-
-    } catch (err) {
-      console.error(err);
-      toast({ title: "Error", description: "An unexpected error occurred while setting up your roadmap.", variant: "destructive" });
+      await saveUserData(DEFAULT_USER_ID, newUserData);
+      data = newUserData;
     }
-  };
 
-  const handleGenerateCustomRoadmap = async () => {
-    if (!timeline.trim()) return;
-    setIsGenerating(true);
-    setError('');
+    if (data) {
+      setUserData(data);
 
-    try {
-        const response = await generateCustomRoadmap({ timeline });
-        const userId = localStorage.getItem(USER_ID_KEY);
-        const userName = localStorage.getItem(USER_NAME_KEY);
-        if (userId && userName && response.roadmap && response.roadmap.length > 0) {
-            const customRoadmap = response.roadmap as RoadmapPhase[];
-            const userData: UserData = {
-              name: userName,
-              roadmap: customRoadmap,
-              streak: { count: 0, lastCompletedDate: null },
-              consistency: [],
-            };
-            await saveUserData(userId, userData);
+      let totalTopics = 0;
+      let completedTopics = 0;
+      data.roadmap.forEach((phase: RoadmapPhase) => {
+        totalTopics += phase.topics.length;
+        completedTopics += phase.topics.filter(topic => topic.completed).length;
+      });
+      setCompletedCount(completedTopics);
+      setTotalCount(totalTopics);
 
-            toast({ title: 'Roadmap Generated!', description: 'Your personalized plan is ready.' });
-            localStorage.setItem('authenticated', 'true');
-            setIsUnlocked(true);
-            setTimeout(() => {
-                router.push('/dashboard');
-            }, 1500);
-        } else {
-            throw new Error("AI returned an empty or invalid roadmap.");
-        }
-    } catch (err: any) {
-        console.error(err);
-        const errorMessage = err.message || '';
-        if (errorMessage.includes('503') || errorMessage.toLowerCase().includes('overloaded')) {
-            setError('The AI model is currently overloaded. Please wait a moment and try again.');
-        } else {
-            setError('Failed to generate roadmap. Please check your API key and try again.');
-        }
-        setIsGenerating(false);
+      setStreak(data.streak?.count ?? 0);
+      setConsistency(data.consistency ?? []);
+      setGreeting(getGreeting(data.name || DEFAULT_USER_NAME));
     }
-  };
 
-  const handlePasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    // Only allow numeric input
-    if (/^\d*$/.test(value)) {
-      setPasscode(value);
-    }
-  };
+    const quoteIndex = new Date().getDate() % motivationalQuotes.length;
+    setQuote(motivationalQuotes[quoteIndex]);
+    
+    setIsLoading(false);
+  }, []);
 
+  useEffect(() => {
+    loadData();
+     // Custom event listener to reload data when it's updated elsewhere (e.g., study plan)
+    const handleDataUpdated = () => loadData();
+    window.addEventListener('userDataUpdated', handleDataUpdated);
+    
+    return () => {
+      window.removeEventListener('userDataUpdated', handleDataUpdated);
+    };
 
-  if (!isClient || isLoading) {
-    return <SplashScreen />;
-  }
-  
-  if (isUnlocked) {
-      return <SetupAnimation />;
-  }
+  }, [loadData]);
 
-  const renderWelcome = () => (
-     <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-background">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-24">
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent font-headline">
-                    Unlock Your Placement Potential
-                  </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Your personalized roadmap to success. Track your progress, get AI-powered help, and stay motivated on your journey to your dream job.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <BrainCircuit className="h-5 w-5 text-primary" />
-                    <span>AI-Powered Features</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    <span>Personalized Roadmap</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BookOpenCheck className="h-5 w-5 text-primary" />
-                    <span>Progress Tracking</span>
-                  </div>
-                </div>
-                <div className="pt-4">
-                  <Button onClick={() => setSetupStep('create-profile')} size="lg">Get Started</Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-  );
-
-  const renderCreateProfile = () => (
-    <main className="flex-1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm mx-auto card-glow-effect">
-        <form onSubmit={handleCreateProfile}>
-          <CardHeader>
-            <CardTitle>Create Your Profile</CardTitle>
-            <CardDescription>Let's get you set up. This is stored securely.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Your Name</label>
-              <div className="flex items-center gap-2">
-                <User className="text-muted-foreground" />
-                <Input
-                  placeholder="e.g., Ada Lovelace"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Create a Passcode</label>
-              <div className="flex items-center gap-2">
-                <KeyRound className="text-muted-foreground" />
-                <Input
-                  type="password"
-                  placeholder="4-digit passcode"
-                  value={passcode}
-                  onChange={handlePasscodeChange}
-                  required
-                  maxLength={4}
-                  pattern="\\d{4}"
-                  inputMode="numeric"
-                />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={!name || passcode.length !== 4}>Create Profile</Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </main>
-  );
-  
-  const renderLogin = () => (
-    <main className="flex-1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm mx-auto card-glow-effect">
-        <form onSubmit={handleLogin}>
-          <CardHeader>
-            <CardTitle>Welcome Back!</CardTitle>
-            <CardDescription>Enter your name and passcode to continue.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="space-y-2">
-                <label className="text-sm font-medium">Name</label>
-                <div className="flex items-center gap-2">
-                    <User className="text-muted-foreground" />
-                    <Input
-                        placeholder="Your name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                </div>
-            </div>
-             <div className="space-y-2">
-                <label className="text-sm font-medium">Passcode</label>
-                <div className="flex items-center gap-2">
-                    <KeyRound className="text-muted-foreground" />
-                    <Input
-                        name="passcode"
-                        type="password"
-                        placeholder="Your 4-digit passcode"
-                        value={passcode}
-                        onChange={handlePasscodeChange}
-                        required
-                        maxLength={4}
-                        pattern="\\d{4}"
-                        inputMode="numeric"
-                    />
-                </div>
-            </div>
-             <p className="text-xs text-muted-foreground text-center pt-2">
-                New user or different device?{" "}
-                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => { localStorage.clear(); setSetupStep('create-profile'); setName(''); setPasscode(''); }}>
-                    Create a new profile.
-                </Button>
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={!name || passcode.length !== 4}>Unlock</Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </main>
-  );
-
-  const renderRoadmapSelection = () => (
-     <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md mx-auto card-glow-effect">
-          <CardHeader>
-            <CardTitle>Choose Your Path</CardTitle>
-            <CardDescription>Select a roadmap to start your journey.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button className="w-full" size="lg">Use Expert's 9-Month Roadmap</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Confirm Selection</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This will apply the expert-curated 9-month roadmap. You can generate a custom one later if you change your mind.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSelectExpertRoadmap}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Generate a Custom Plan</label>
-                <Input
-                    placeholder="e.g., 3 months, 6 weeks..."
-                    value={timeline}
-                    onChange={(e) => setTimeline(e.target.value)}
-                    disabled={isGenerating}
-                />
-            </div>
-            {error && <p className="text-sm text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4"/> {error}</p>}
-            
-            <Button
-                className="w-full"
-                onClick={handleGenerateCustomRoadmap}
-                disabled={isGenerating || !timeline.trim()}
-            >
-                {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                {isGenerating ? 'Generating...' : 'Generate with AI'}
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
-  );
-
-  const renderContent = () => {
-    switch (setupStep) {
-        case 'login': return renderLogin();
-        case 'create-profile': return renderCreateProfile();
-        case 'roadmap-selection': return renderRoadmapSelection();
-        case 'welcome':
-        default:
-            return renderWelcome();
-    }
-  }
+  const remainingCount = totalCount - completedCount;
+  const streakBadge = getStreakBadge(streak);
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-        <header className="flex h-16 items-center justify-between px-4 md:px-8 border-b">
-             <div className="flex items-center gap-2 text-lg font-bold text-primary font-headline">
-                <GraduationCap className="h-6 w-6" />
-                <span>NextGenSDE</span>
-             </div>
-             {setupStep !== 'roadmap-selection' && <ThemeToggle />}
-        </header>
-        {renderContent()}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">{isLoading ? <Skeleton className="h-8 w-64" /> : greeting}</h1>
+        <p className="text-muted-foreground">An overview of your progress and motivation.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {isLoading ? (
+                    <>
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                    </>
+                ) : (
+                    <>
+                        <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Topics Completed</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{completedCount}</div>
+                            <p className="text-xs text-muted-foreground">out of {totalCount} total topics</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Topics Remaining</CardTitle>
+                            <Target className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{remainingCount}</div>
+                            <p className="text-xs text-muted-foreground">Keep going!</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
+                            <Flame className="h-4 w-4 text-primary" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{streak}</div>
+                            <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
+                          </CardContent>
+                        </Card>
+                         <Card className="card-glow-effect">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Streak Badge</CardTitle>
+                            <Award className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold flex items-center gap-2">
+                                <span>{streakBadge.icon}</span>
+                                <span>{streakBadge.name}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{streak > 0 ? `Level ${streakBadge.level} Achievement` : "Start a streak to earn a badge!"}</p>
+                          </CardContent>
+                        </Card>
+                    </>
+                )}
+            </div>
+            <OverviewChart completed={completedCount} remaining={remainingCount} />
+        </div>
+
+        {/* Right Column */}
+        <div className="lg:col-span-1 space-y-6">
+            <ConsistencyCalendar consistency={consistency} />
+            <Card className="card-glow-effect">
+              <CardHeader>
+                <CardTitle>Daily Quote</CardTitle>
+                 <CardDescription>A little motivation for your day.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center gap-4 pt-6">
+                 <Quote className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+                 <blockquote className="text-sm italic border-l-4 border-primary pl-4">"{quote}"</blockquote>
+              </CardContent>
+            </Card>
+        </div>
+      </div>
     </div>
   );
 }
-
-    

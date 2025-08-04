@@ -33,22 +33,7 @@ export type UserData = {
     consistency: string[];
 };
 
-/**
- * Generates a consistent, unique ID based on the user's name and passcode.
- * This is a simple hashing approach for this specific use case.
- * In a real-world scenario with sensitive data, a more secure method would be required.
- */
-export const generateUserId = (name: string, passcode: string): string => {
-  const combined = `${name.toLowerCase().trim()}-${passcode}`;
-  // Basic hash function
-  let hash = 0;
-  for (let i = 0; i < combined.length; i++) {
-    const char = combined.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return `user_${Math.abs(hash)}`;
-};
+export const DEFAULT_USER_ID = "default-user";
 
 /**
  * Fetches user data from Firestore. If the user doesn't exist, it returns null.
@@ -164,8 +149,6 @@ export const restoreDefaultRoadmap = async (userId: string): Promise<UserData | 
 
     const expertRoadmap = await getExpertRoadmap();
     
-    // The getExpertRoadmap function now includes a fallback, so this check is for safety,
-    // but it should always return a roadmap.
     if (!expertRoadmap) {
         console.error("Could not find expert roadmap in the database or local files.");
         return data; 

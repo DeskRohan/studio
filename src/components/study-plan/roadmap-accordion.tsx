@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Check, List, Target, Info, RefreshCcw } from 'lucide-react';
+import { List, Target, Info, RefreshCcw } from 'lucide-react';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
@@ -35,10 +35,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import confetti from 'canvas-confetti';
 import { Skeleton } from '../ui/skeleton';
-import { getUserData, saveUserData, resetUserProgress, restoreDefaultRoadmap } from '@/services/userData';
+import { getUserData, saveUserData, resetUserProgress, restoreDefaultRoadmap, DEFAULT_USER_ID } from '@/services/userData';
 import type { RoadmapPhase, UserData } from '@/services/userData';
-
-const USER_ID_KEY = 'user-id';
 
 const checkPhaseCompletion = (phase: RoadmapPhase) => {
     const allTopicsDone = phase.topics.every(t => t.completed);
@@ -54,11 +52,8 @@ export function RoadmapAccordion() {
 
   const loadRoadmapData = useCallback(async () => {
     setIsLoading(true);
-    const userId = localStorage.getItem(USER_ID_KEY);
-    if (userId) {
-      const data = await getUserData(userId);
-      setUserData(data);
-    }
+    const data = await getUserData(DEFAULT_USER_ID);
+    setUserData(data);
     setIsLoading(false);
   }, []);
 
@@ -83,22 +78,19 @@ export function RoadmapAccordion() {
 
   const updateUserDataAndSave = async (updatedData: UserData) => {
       setUserData(updatedData);
-      const userId = localStorage.getItem(USER_ID_KEY);
-      if(userId) {
-        try {
-          await saveUserData(userId, updatedData);
-          // Dispatch event to notify other components (like dashboard) that data has changed
-          window.dispatchEvent(new Event('userDataUpdated'));
-        } catch (error) {
-           console.error("Failed to save user data:", error);
-           toast({
-              title: "Sync Error",
-              description: "Could not save your progress to the cloud. Please check your connection.",
-              variant: "destructive"
-           });
-           // Optionally, revert local state if save fails
-           loadRoadmapData();
-        }
+      try {
+        await saveUserData(DEFAULT_USER_ID, updatedData);
+        // Dispatch event to notify other components (like dashboard) that data has changed
+        window.dispatchEvent(new Event('userDataUpdated'));
+      } catch (error) {
+         console.error("Failed to save user data:", error);
+         toast({
+            title: "Sync Error",
+            description: "Could not save your progress to the cloud. Please check your connection.",
+            variant: "destructive"
+         });
+         // Optionally, revert local state if save fails
+         loadRoadmapData();
       }
   };
 
@@ -217,30 +209,24 @@ export function RoadmapAccordion() {
   }
 
   const handleRestoreDefault = async () => {
-    const userId = localStorage.getItem(USER_ID_KEY);
-    if (userId) {
-      const updatedUserData = await restoreDefaultRoadmap(userId);
-      setUserData(updatedUserData);
-      window.dispatchEvent(new Event('userDataUpdated'));
-      toast({
-        title: "Expert Roadmap Restored",
-        description: "The expert's roadmap for placements has been applied.",
-      });
-    }
+    const updatedUserData = await restoreDefaultRoadmap(DEFAULT_USER_ID);
+    setUserData(updatedUserData);
+    window.dispatchEvent(new Event('userDataUpdated'));
+    toast({
+      title: "Expert Roadmap Restored",
+      description: "The expert's roadmap for placements has been applied.",
+    });
   }
 
 
   const handleResetProgress = async () => {
-    const userId = localStorage.getItem(USER_ID_KEY);
-    if (userId) {
-        const updatedUserData = await resetUserProgress(userId);
-        setUserData(updatedUserData);
-        window.dispatchEvent(new Event('userDataUpdated'));
-        toast({
-            title: "Progress Reset",
-            description: "Your roadmap progress and streak have been reset.",
-        });
-    }
+    const updatedUserData = await resetUserProgress(DEFAULT_USER_ID);
+    setUserData(updatedUserData);
+    window.dispatchEvent(new Event('userDataUpdated'));
+    toast({
+        title: "Progress Reset",
+        description: "Your roadmap progress and streak have been reset.",
+    });
   }
 
   const getPhaseStatus = (phase: RoadmapPhase) => {
@@ -389,7 +375,7 @@ export function RoadmapAccordion() {
           </Accordion>
            <div className="text-xs text-muted-foreground flex items-center gap-2 pl-12">
                 <Info className="h-4 w-4" />
-                <span>Your progress is saved automatically and synced across devices.</span>
+                <span>Your progress is saved automatically.</span>
            </div>
         </div>
     </div>

@@ -4,45 +4,18 @@
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
-import { SplashScreen } from '@/components/splash-screen';
-import { useState, useEffect } from 'react';
+import { Header, MobileNav } from '@/components/header';
+import { Footer } from '@/components/footer';
+import { NivaFab } from '@/components/niva-fab';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // This logic now only applies to the very first load of the entire app in a session.
-    // The post-login splash is handled in the page.tsx itself.
-    const hasVisited = sessionStorage.getItem('splashScreenShown');
-    if (hasVisited) {
-      setIsLoading(false);
-      return;
-    }
-    
-    // For the very first visit, show the splash screen, then mark it as shown.
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      sessionStorage.setItem('splashScreenShown', 'true');
-    }, 2500); 
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show a splash screen only on the initial load of the application
-  if (isLoading) {
-    return (
-       <html lang="en" suppressHydrationWarning>
-        <head />
-        <body>
-          <SplashScreen />
-        </body>
-      </html>
-    )
-  }
+  const isMobile = useIsMobile();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -54,7 +27,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="flex min-h-screen w-full flex-col bg-background">
+            <Header />
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pb-24 md:pb-8">
+              {children}
+            </main>
+            <NivaFab />
+            {isMobile && <MobileNav />}
+            <div className="hidden md:block">
+              <Footer />
+            </div>
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>

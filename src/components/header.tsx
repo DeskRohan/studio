@@ -2,9 +2,9 @@
 'use client';
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass } from "lucide-react";
+import { User, GraduationCap, Mic, Library, Rocket, Home, BookText, DraftingCompass } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 import {
@@ -13,11 +13,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useToast } from "@/hooks/use-toast";
-
 
 const navItems = [
-  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/", icon: Home, label: "Dashboard" },
   { href: "/study-plan", icon: Rocket, label: "Roadmap" },
   { href: "/question-bank", icon: BookText, label: "Questions" },
   { href: "/resources", icon: Library, label: "Resources" },
@@ -25,46 +23,27 @@ const navItems = [
 ];
 
 const desktopNavItems = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/", label: "Dashboard" },
   { href: "/study-plan", label: "My Roadmap" },
   { href: "/question-bank", label: "Question Bank"},
   { href: "/resources", label: "Resources" },
   { href: "/ai-interviewer", label: "AI Interviewer" },
 ];
 
-const USER_ID_KEY = 'user-id';
-const USER_NAME_KEY = 'user-name';
-const USER_PASSCODE_KEY = 'user-passcode';
-
-
 export function Header() {
-  const router = useRouter();
   const pathname = usePathname();
-  const { toast } = useToast();
-
-  const handleLogout = () => {
-    localStorage.removeItem('authenticated');
-    localStorage.removeItem(USER_ID_KEY);
-    localStorage.removeItem(USER_NAME_KEY);
-    localStorage.removeItem(USER_PASSCODE_KEY);
-    toast({
-        title: "Logged Out",
-        description: "You have been successfully signed out.",
-    });
-    router.push('/');
-  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/[.96] px-4 sm:px-8">
        <div className="flex w-full items-center justify-between">
          <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
+            <Link href="/" className="flex items-center gap-2 text-lg font-semibold md:text-base">
                 <GraduationCap className="h-6 w-6 text-primary" />
                 <span className="text-xl font-bold text-primary font-headline">NextGenSDE</span>
             </Link>
             {desktopNavItems.map((item) => (
             <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
                 className={cn(
                 "transition-colors hover:text-foreground",
@@ -77,7 +56,7 @@ export function Header() {
         </nav>
         
         <div className="flex w-full items-center justify-between md:hidden">
-            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold">
+            <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
                 <GraduationCap className="h-6 w-6 text-primary" />
                 <span className="font-bold text-primary font-headline">NextGenSDE</span>
             </Link>
@@ -111,17 +90,6 @@ export function Header() {
                         <p>The Architect</p>
                     </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={handleLogout}>
-                            <LogOut className="h-5 w-5" />
-                            <span className="sr-only">Logout</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Logout</p>
-                    </TooltipContent>
-                </Tooltip>
             </TooltipProvider>
             <ThemeToggle />
         </div>
@@ -146,7 +114,7 @@ export function MobileNav() {
                                         href={item.href}
                                         className={cn(
                                             "flex flex-col items-center justify-center gap-1 rounded-md p-2 transition-colors",
-                                            pathname.startsWith(item.href)
+                                             (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)))
                                             ? "bg-primary/10 text-primary font-semibold"
                                             : "text-muted-foreground hover:bg-muted"
                                         )}

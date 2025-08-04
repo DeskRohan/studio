@@ -21,9 +21,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { saveUserRoadmap } from '@/services/userData';
+import { saveUserRoadmap, DEFAULT_USER_ID } from '@/services/userData';
 
-const USER_ID_KEY = 'user-id';
 
 export function CustomRoadmapGenerator() {
     const [timeline, setTimeline] = useState('');
@@ -64,10 +63,9 @@ export function CustomRoadmapGenerator() {
     };
 
     const applyRoadmap = async () => {
-        const userId = localStorage.getItem(USER_ID_KEY);
-        if (!generatedRoadmap || !userId) return;
+        if (!generatedRoadmap) return;
         
-        await saveUserRoadmap(userId, generatedRoadmap);
+        await saveUserRoadmap(DEFAULT_USER_ID, generatedRoadmap);
         
         setGeneratedRoadmap(null);
         toast({
