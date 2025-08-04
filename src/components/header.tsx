@@ -32,6 +32,11 @@ const desktopNavItems = [
   { href: "/ai-interviewer", label: "AI Interviewer" },
 ];
 
+const USER_ID_KEY = 'user-id';
+const USER_NAME_KEY = 'user-name';
+const USER_PASSCODE_KEY = 'user-passcode';
+
+
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,6 +44,9 @@ export function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('authenticated');
+    localStorage.removeItem(USER_ID_KEY);
+    localStorage.removeItem(USER_NAME_KEY);
+    localStorage.removeItem(USER_PASSCODE_KEY);
     toast({
         title: "Logged Out",
         description: "You have been successfully signed out.",

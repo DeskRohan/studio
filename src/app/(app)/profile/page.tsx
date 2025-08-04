@@ -55,10 +55,13 @@ export default function ProfilePage() {
         const userId = localStorage.getItem(USER_ID_KEY);
         if (userId) {
             await clearUserData(userId);
+            // handleLogout will show toast and redirect
             handleLogout();
-            toast({
-                title: "Account Data Cleared",
-                description: "All your data has been removed from this device and the cloud.",
+        } else {
+             toast({
+                title: "Error",
+                description: "Could not find user ID to clear data.",
+                variant: "destructive",
             });
         }
     }
@@ -104,7 +107,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <CardTitle className="text-destructive">Danger Zone</CardTitle>
                     <CardDescription>
-                        This action will permanently delete all your account data from the cloud, including your roadmap, streak, and progress.
+                        This action will permanently delete all your account data from this device and the cloud. This cannot be undone.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
@@ -112,7 +115,7 @@ export default function ProfilePage() {
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Clear Account Data
+                                Clear All Data
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
