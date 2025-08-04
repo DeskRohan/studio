@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
+import { Sparkles, Lightbulb, BookOpen, AlertTriangle } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
-import { getUserData, DEFAULT_USER_ID } from '@/services/userData';
-import type { RoadmapPhase } from '@/services/userData';
+import type { RoadmapPhase } from '@/lib/data';
 
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 type Recommendation = {
     topic: string;
@@ -21,9 +21,12 @@ export function Recommendations() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const findWeakestTopics = (roadmap: RoadmapPhase[] | undefined) => {
-        if (!roadmap) return [];
+    const findWeakestTopics = () => {
         try {
+            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
+            if (!savedRoadmap) return [];
+
+            const roadmap: RoadmapPhase[] = JSON.parse(savedRoadmap);
             const topicProgress: { [key: string]: { completed: number, total: number } } = {};
 
             const topicKeywords = [
@@ -68,24 +71,15 @@ export function Recommendations() {
     };
     
     const fetchRecommendations = async () => {
+        const weakestTopics = findWeakestTopics();
+        if (weakestTopics.length === 0) {
+            setError("Could not determine weakest topics. Complete some roadmap items first!");
+            return;
+        }
+
         setIsLoading(true);
         setError('');
         setRecommendations([]);
-
-        const userData = await getUserData(DEFAULT_USER_ID);
-        if (!userData) {
-            setError("Could not retrieve user data.");
-            setIsLoading(false);
-            return;
-        }
-
-        const weakestTopics = findWeakestTopics(userData.roadmap);
-
-        if (weakestTopics.length === 0) {
-            setError("Could not determine weakest topics. Complete some roadmap items first!");
-            setIsLoading(false);
-            return;
-        }
 
         try {
             const response = await getLearningRecommendations({ topics: weakestTopics });

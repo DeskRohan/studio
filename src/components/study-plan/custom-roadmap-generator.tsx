@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Sparkles, AlertTriangle } from 'lucide-react';
 import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
-import type { RoadmapPhase } from '@/services/userData';
+import type { RoadmapPhase } from '@/lib/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +20,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { saveUserRoadmap, DEFAULT_USER_ID } from '@/services/userData';
+} from "@/components/ui/alert-dialog"
 
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 export function CustomRoadmapGenerator() {
     const [timeline, setTimeline] = useState('');
@@ -43,30 +43,23 @@ export function CustomRoadmapGenerator() {
         setGeneratedRoadmap(null);
 
         try {
-            const response = await generateCustomRoadmap({ timeline });
+            const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
             if (response.roadmap && response.roadmap.length > 0) {
-                setGeneratedRoadmap(response.roadmap as RoadmapPhase[]);
+                setGeneratedRoadmap(response.roadmap);
             } else {
                  throw new Error("AI returned an empty or invalid roadmap.");
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            const errorMessage = err.message || '';
-            if (errorMessage.includes('503') || errorMessage.toLowerCase().includes('overloaded')) {
-                setError('The AI model is currently overloaded. Please wait a moment and try again.');
-            } else {
-                setError('Failed to generate roadmap. The AI may be busy, or there might be an issue with your API key. Please try again.');
-            }
+            setError('Failed to generate roadmap. The AI may be busy, or there might be an issue with your API key. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const applyRoadmap = async () => {
+    const applyRoadmap = () => {
         if (!generatedRoadmap) return;
-        
-        await saveUserRoadmap(DEFAULT_USER_ID, generatedRoadmap);
-        
+        localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(generatedRoadmap));
         setGeneratedRoadmap(null);
         toast({
             title: 'Roadmap Updated!',

@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 import { screens } from 'tailwindcss/defaultTheme'
 
