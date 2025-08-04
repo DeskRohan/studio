@@ -81,59 +81,35 @@ export function RoadmapAccordion() {
     });
   }
 
-  const updateUserData = async (newUserData: UserData) => {
-      setUserData(newUserData);
+  const updateUserDataAndSave = async (updatedData: UserData) => {
+      setUserData(updatedData);
       const userId = localStorage.getItem(USER_ID_KEY);
       if(userId) {
-        await saveUserData(userId, newUserData);
+        try {
+          await saveUserData(userId, updatedData);
+          // Dispatch event to notify other components (like dashboard) that data has changed
+          window.dispatchEvent(new Event('userDataUpdated'));
+        } catch (error) {
+           console.error("Failed to save user data:", error);
+           toast({
+              title: "Sync Error",
+              description: "Could not save your progress to the cloud. Please check your connection.",
+              variant: "destructive"
+           });
+           // Optionally, revert local state if save fails
+           loadRoadmapData();
+        }
       }
-      window.dispatchEvent(new Event('userDataUpdated'));
-  };
-
-  const updateConsistencyAndStreak = (currentData: UserData): UserData => {
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    let updatedData = { ...currentData };
-
-    // Update consistency
-    if (!updatedData.consistency.includes(todayStr)) {
-      updatedData.consistency = [...updatedData.consistency, todayStr];
-    }
-
-    // Update streak
-    const streak = updatedData.streak;
-    if (streak.lastCompletedDate !== todayStr) {
-      const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-      if (streak.lastCompletedDate === yesterdayStr) {
-        streak.count += 1;
-        toast({
-            title: "Streak Extended!",
-            description: `You're now on a ${streak.count} day streak! Keep it up! 🎉`,
-        });
-      } else {
-        streak.count = 1;
-        toast({
-            title: "New Streak Started!",
-            description: "You've completed an item for the first time in a while. 🔥",
-        });
-      }
-      streak.lastCompletedDate = todayStr;
-      updatedData.streak = streak;
-    }
-    
-    return updatedData;
   };
 
   const handleToggleTopic = (phaseId: number, topicId: number) => {
     if (!userData) return;
+
+    let wasPhaseCompletedBefore = false;
     
-    let newUserData = { ...userData };
-    const oldPhaseState = newUserData.roadmap.find(p => p.id === phaseId);
-    if (!oldPhaseState) return;
-    
-    const wasPhaseCompletedBefore = checkPhaseCompletion(oldPhaseState);
-    
-    const newRoadmap = newUserData.roadmap.map((phase) => {
+    const newRoadmap = userData.roadmap.map((phase) => {
       if (phase.id === phaseId) {
+        wasPhaseCompletedBefore = checkPhaseCompletion(phase);
         const newTopics = phase.topics.map((topic) =>
           topic.id === topicId ? { ...topic, completed: !topic.completed } : topic
         );
@@ -141,12 +117,15 @@ export function RoadmapAccordion() {
       }
       return phase;
     });
+
+    const isTopicNowCompleted = newRoadmap
+      .find(p => p.id === phaseId)?.topics
+      .find(t => t.id === topicId)?.completed;
     
-    newUserData = { ...newUserData, roadmap: newRoadmap };
+    let updatedData = { ...userData, roadmap: newRoadmap };
 
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
     const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
-    const isTopicNowCompleted = newPhaseState.topics.find(t => t.id === topicId)!.completed;
 
     if (isPhaseCompletedNow && !wasPhaseCompletedBefore) {
         triggerConfetti();
@@ -157,33 +136,70 @@ export function RoadmapAccordion() {
     }
 
     if (isTopicNowCompleted) {
-        newUserData = updateConsistencyAndStreak(newUserData);
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      let consistency = updatedData.consistency;
+      if (!consistency.includes(todayStr)) {
+        consistency = [...consistency, todayStr];
+      }
+
+      let streak = { ...updatedData.streak };
+      if (streak.lastCompletedDate !== todayStr) {
+        const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+        if (streak.lastCompletedDate === yesterdayStr) {
+          streak.count += 1;
+          toast({
+              title: "Streak Extended!",
+              description: `You're now on a ${streak.count} day streak! Keep it up! 🎉`,
+          });
+        } else {
+          streak.count = 1;
+          toast({
+              title: "New Streak Started!",
+              description: "You've completed an item for the first time in a while. 🔥",
+          });
+        }
+        streak.lastCompletedDate = todayStr;
+      }
+      updatedData = { ...updatedData, consistency, streak };
     }
     
-    updateUserData(newUserData);
+    updateUserDataAndSave(updatedData);
   };
 
   const handleProblemsChange = (phaseId: number, newCount: number) => {
      if (!userData) return;
     
-     let newUserData = { ...userData };
-     const oldPhaseState = newUserData.roadmap.find(p => p.id === phaseId);
-     if (!oldPhaseState) return;
+     let wasPhaseCompletedBefore = false;
+     const oldProblemsSolved = userData.roadmap.find(p => p.id === phaseId)!.problemsSolved;
 
-     const wasPhaseCompletedBefore = checkPhaseCompletion(oldPhaseState);
-     const isProgress = newCount > oldPhaseState.problemsSolved;
-
-     const newRoadmap = newUserData.roadmap.map((phase) => {
+     const newRoadmap = userData.roadmap.map((phase) => {
       if (phase.id === phaseId) {
+        wasPhaseCompletedBefore = checkPhaseCompletion(phase);
         return { ...phase, problemsSolved: newCount };
       }
       return phase;
     });
 
-    newUserData = { ...newUserData, roadmap: newRoadmap };
+    let updatedData = { ...userData, roadmap: newRoadmap };
+    
+    if (newCount > oldProblemsSolved) {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        let consistency = updatedData.consistency;
+        if (!consistency.includes(todayStr)) {
+          consistency = [...consistency, todayStr];
+        }
 
-    if (isProgress) {
-        newUserData = updateConsistencyAndStreak(newUserData);
+        let streak = { ...updatedData.streak };
+        if (streak.lastCompletedDate !== todayStr) {
+          const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+          if (streak.lastCompletedDate === yesterdayStr) {
+            streak.count += 1;
+          } else {
+            streak.count = 1;
+          }
+          streak.lastCompletedDate = todayStr;
+        }
+        updatedData = { ...updatedData, consistency, streak };
     }
     
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
@@ -197,7 +213,7 @@ export function RoadmapAccordion() {
         });
     }
 
-    updateUserData(newUserData);
+    updateUserDataAndSave(updatedData);
   }
 
   const handleRestoreDefault = async () => {
@@ -379,5 +395,3 @@ export function RoadmapAccordion() {
     </div>
   );
 }
-
-    
