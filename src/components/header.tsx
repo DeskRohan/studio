@@ -18,8 +18,6 @@ import { auth } from "@/lib/firebase";
 
 
 const AUTH_KEY = 'authenticated_v2';
-const USER_DATA_KEY = 'user-profile-data';
-
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -45,7 +43,6 @@ export function Header() {
     try {
         await signOut(auth);
         sessionStorage.removeItem(AUTH_KEY);
-        localStorage.removeItem(USER_DATA_KEY);
         router.push('/');
     } catch (error) {
         console.error("Error signing out: ", error);

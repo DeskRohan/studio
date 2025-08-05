@@ -4,194 +4,103 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, GraduationCap, BrainCircuit, Target, BookOpenCheck, UserPlus, Info, LogIn, Wand2, Star, CheckCircle, User } from 'lucide-react';
+import { Loader2, GraduationCap, BrainCircuit, Target, BookOpenCheck, Info } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SplashScreen } from '@/components/splash-screen';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { defaultRoadmap } from '@/lib/data';
-import { generateCustomRoadmap } from '@/ai/flows/generate-custom-roadmap';
-import type { RoadmapPhase } from '@/lib/data';
-import { SetupAnimation } from '@/components/setup-animation';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
+import Image from 'next/image';
 
-
-const USER_DATA_KEY = 'user-profile-data';
 const AUTH_KEY = 'authenticated_v2';
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+
+const GoogleIcon = () => (
+    <svg className="h-5 w-5" viewBox="0 0 24 24">
+        <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            fill="#4285F4"
+        />
+        <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853"
+        />
+        <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            fill="#FBBC05"
+        />
+        <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            fill="#EA4335"
+        />
+        <path d="M1 1h22v22H1z" fill="none" />
+    </svg>
+);
 
 
 export default function WelcomePage() {
-  const [mode, setMode] = useState<'loading' | 'welcome' | 'login' | 'setup' | 'setup-roadmap'>('loading');
-  const [passcode, setPasscode] = useState('');
-  const [name, setName] = useState('');
-  const [newPasscode, setNewPasscode] = useState('');
-  const [timeline, setTimeline] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         if(user) {
-            setIsUnlocked(true);
-            setTimeout(() => router.push('/dashboard'), 1000);
+            sessionStorage.setItem(AUTH_KEY, 'true');
+            router.push('/dashboard');
         } else {
-            // No user is signed in, so clear session/local storage
-            sessionStorage.removeItem(AUTH_KEY);
-            localStorage.removeItem(USER_DATA_KEY);
-            setMode('setup'); // Default to setup for new visitors
+            setIsAuthenticating(false);
         }
     });
-
     return () => unsubscribe();
   }, [router]);
 
-  const getEmailForPasscode = (passcode: string) => `${passcode}@nextgensde.app`;
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
-
+    const provider = new GoogleAuthProvider();
     try {
-        const email = getEmailForPasscode(passcode);
-        await signInWithEmailAndPassword(auth, email, passcode);
-        const user = auth.currentUser;
-        if (user) {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if(userDoc.exists()) {
-                 localStorage.setItem(USER_DATA_KEY, JSON.stringify({ name: userDoc.data().name, passcode }));
-            }
-            sessionStorage.setItem(AUTH_KEY, 'true');
-            setIsUnlocked(true);
-            setTimeout(() => router.push('/dashboard'), 1000);
-        }
-    } catch (error) {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        await checkAndCreateUserProfile(user);
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        router.push('/dashboard');
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("Google Sign-In Error:", error);
         toast({
-            title: 'Incorrect Passcode',
-            description: 'The passcode you entered is not correct. Please try again.',
+            title: 'Authentication Failed',
+            description: 'Could not sign in with Google. Please try again.',
             variant: 'destructive',
         });
-        setIsLoading(false);
-    }
-  };
-
-  const handleSetupDetails = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPasscode.length !== 4 || !/^\d{4}$/.test(newPasscode)) {
-        toast({ title: "Invalid Passcode", description: "Passcode must be exactly 4 digits.", variant: "destructive" });
-        return;
-    }
-    if (!name.trim()) {
-        toast({ title: "Invalid Name", description: "Please enter your name.", variant: "destructive" });
-        return;
-    }
-    setShowPrivacyDialog(true);
-  }
-
-  const handleUseExpertRoadmap = () => {
-    finishSetup(defaultRoadmap);
-  }
-
-  const handleGenerateCustomRoadmap = async () => {
-    if (!timeline.trim()) {
-        toast({ title: 'Timeline Required', description: 'Please enter your timeline to generate a plan.', variant: 'destructive' });
-        return;
-    }
-    setIsLoading(true);
-     try {
-        const response = await generateCustomRoadmap({ goal: 'Placement Preparation', timeline });
-        if (response.roadmap && response.roadmap.length > 0) {
-            finishSetup(response.roadmap);
-        } else {
-             throw new Error("AI returned an empty or invalid roadmap.");
-        }
-    } catch (err) {
-        console.error(err);
-        toast({
-            title: 'Generation Failed',
-            description: 'Could not generate roadmap. The AI might be busy. Please try again or use the expert roadmap.',
-            variant: 'destructive'
-        });
+      }
     } finally {
         setIsLoading(false);
     }
-  }
-
-  const finishSetup = async (roadmapData: RoadmapPhase[]) => {
-    setIsLoading(true);
-    try {
-        const email = getEmailForPasscode(newPasscode);
-        const userCredential = await createUserWithEmailAndPassword(auth, email, newPasscode);
-        const user = userCredential.user;
-
-        // Create the user document in Firestore with only essential info
-        await setDoc(doc(db, "users", user.uid), {
-            name: name.trim(),
-            email: user.email,
-            createdAt: new Date(),
-            roadmap: roadmapData, // Save the chosen roadmap
-        });
-        
-        // Store minimal data locally
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify({ name: name.trim() }));
-        sessionStorage.setItem(AUTH_KEY, 'true');
-        
-        setIsNewUser(true);
-        setIsUnlocked(true);
-        setTimeout(() => router.push('/dashboard'), 2500);
-
-    } catch (error: any) {
-        if (error.code === 'auth/email-already-in-use') {
-             toast({ title: "Passcode Taken", description: "This passcode is already in use. Please choose another.", variant: "destructive" });
-        } else {
-             console.error("Setup failed:", error);
-             toast({ title: "Setup Failed", description: "An error occurred during setup. Please check the console and try again.", variant: "destructive" });
-        }
-        setIsLoading(false);
-    }
-  }
-
-  const confirmPrivacy = () => {
-    setMode('setup-roadmap');
-    setShowPrivacyDialog(false);
-  }
-
-  const handlePasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    setPasscode(value);
-  }
+  };
   
-  const handleNewPasscodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    setNewPasscode(value);
+  const checkAndCreateUserProfile = async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+        // New user, create their profile
+        await setDoc(userDocRef, {
+            name: user.displayName,
+            email: user.email,
+            createdAt: serverTimestamp(),
+            roadmap: defaultRoadmap, // Start with the default roadmap
+            streak: { count: 0, lastCompletedDate: "" },
+            consistency: [],
+        });
+    }
   }
 
-
-    if (isUnlocked) {
-        return isNewUser ? <SetupAnimation /> : <SplashScreen />;
-    }
-    
-    if (mode === 'loading') {
-        return <SplashScreen />
-    }
+  if (isAuthenticating) {
+    return <SplashScreen />;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -232,173 +141,37 @@ export default function WelcomePage() {
                   </div>
                   
                   <div className="flex items-center justify-center">
-                     {mode === 'welcome' && (
-                        <Card className="w-full max-w-sm h-full card-glow-effect flex flex-col justify-center">
-                            <CardHeader>
-                                <CardTitle className="text-2xl">Welcome!</CardTitle>
-                                <CardDescription>
-                                    Have an account? Log in with your passcode.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex flex-col gap-4">
-                                <Button onClick={() => setMode('login')} className="w-full">
-                                    <LogIn className="mr-2 h-4 w-4"/>
-                                    Login with Passcode
-                                </Button>
-                                <Button onClick={() => setMode('setup')} variant="outline" className="w-full">
-                                    <UserPlus className="mr-2 h-4 w-4"/>
-                                    Create a New Profile
-                                </Button>
-                            </CardContent>
-                        </Card>
-                     )}
-                    {mode === 'login' && (
-                        <Card className="w-full max-w-sm h-full card-glow-effect">
-                            <CardHeader>
-                                <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-                                <CardDescription>
-                                    Please enter your passcode to access your dashboard.
-                                </CardDescription>
-                            </CardHeader>
-                            <form onSubmit={handleLogin}>
-                                <CardContent className="grid gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="passcode">4-Digit Passcode</Label>
-                                        <Input
-                                            id="passcode"
-                                            type="password"
-                                            maxLength={4}
-                                            placeholder="••••"
-                                            value={passcode}
-                                            onChange={handlePasscodeChange}
-                                            className="text-center text-lg tracking-[0.5rem]"
-                                        />
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="flex flex-col gap-2">
-                                    <Button type="submit" className="w-full" disabled={isLoading || passcode.length !== 4}>
-                                    {isLoading ? <Loader2 className="animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                                    Unlock
-                                    </Button>
-                                    <Button variant="link" size="sm" onClick={() => setMode('setup')}>
-                                        Create a new profile instead
-                                    </Button>
-                                </CardFooter>
-                            </form>
-                        </Card>
-                    )}
-                    {mode === 'setup' && (
-                        <Card className="w-full max-w-sm h-full card-glow-effect">
-                            <CardHeader>
-                                <CardTitle className="text-2xl">Let's Get Started</CardTitle>
-                                <CardDescription>
-                                    Create your profile to begin your journey.
-                                </CardDescription>
-                            </CardHeader>
-                            <form onSubmit={handleSetupDetails}>
-                                <CardContent className="grid gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name">Your Name</Label>
-                                        <Input id="name" placeholder="Enter your name" required value={name} onChange={(e) => setName(e.target.value)} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="new-passcode">Set a 4-Digit Passcode</Label>
-                                        <Input
-                                            id="new-passcode"
-                                            type="password"
-                                            maxLength={4}
-                                            placeholder="••••"
-                                            value={newPasscode}
-                                            onChange={handleNewPasscodeChange}
-                                            className="text-center text-lg tracking-[0.5rem]"
-                                        />
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="flex flex-col gap-2">
-                                    <Button type="submit" className="w-full" disabled={!name.trim() || newPasscode.length !== 4}>
-                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                        Next: Choose Roadmap
-                                    </Button>
-                                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 text-center mt-2">
-                                        <Info className="h-4 w-4 shrink-0" />
-                                        <span>Your info is saved securely in the cloud.</span>
-                                     </p>
-                                      <Button variant="link" size="sm" onClick={() => setMode('login')}>
-                                        Already have an account? Login
-                                    </Button>
-                                </CardFooter>
-                            </form>
-                        </Card>
-                    )}
-
-                    {mode === 'setup-roadmap' && (
-                         <Card className="w-full max-w-sm h-full card-glow-effect flex flex-col">
-                            <CardHeader>
-                                <CardTitle className="text-2xl">Choose Your Path</CardTitle>
-                                <CardDescription>
-                                    Select a roadmap to start your preparation journey.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4 flex-grow">
-                                <Button onClick={handleUseExpertRoadmap} variant="secondary" className="w-full h-auto text-left flex flex-col items-start p-4 gap-1">
-                                    <div className="flex items-center gap-2 font-bold">
-                                        <Star className="h-5 w-5 text-primary"/>
-                                        <span>Use Expert's 9-Month Roadmap</span>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground pl-7">A comprehensive, battle-tested plan for placements.</p>
-                                </Button>
-                                
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-card px-2 text-muted-foreground">Or</span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 rounded-lg border p-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="timeline" className="flex items-center gap-2 font-bold">
-                                            <Wand2 className="h-5 w-5 text-primary"/>
-                                            Generate a Custom Plan with AI
-                                        </Label>
-                                         <Input
-                                            id="timeline"
-                                            placeholder="e.g., 3 months, 6 weeks..."
-                                            value={timeline}
-                                            onChange={(e) => setTimeline(e.target.value)}
-                                        />
-                                    </div>
-                                    <Button onClick={handleGenerateCustomRoadmap} disabled={isLoading || !timeline.trim()} className="w-full">
-                                        {isLoading ? <Loader2 className="animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                                        {isLoading ? 'Generating Your Plan...' : 'Generate with AI'}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <Card className="w-full max-w-sm h-full card-glow-effect flex flex-col justify-center">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl">Welcome!</CardTitle>
+                            <CardDescription>
+                                Sign in with your Google account to begin.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <Button onClick={handleGoogleSignIn} className="w-full" disabled={isLoading}>
+                                {isLoading ? (
+                                    <Loader2 className="animate-spin" />
+                                ) : (
+                                    <>
+                                        <GoogleIcon />
+                                        <span>Sign in with Google</span>
+                                    </>
+                                )}
+                            </Button>
+                        </CardContent>
+                        <CardContent>
+                             <p className="text-xs text-muted-foreground flex items-center gap-1.5 text-center mt-2">
+                                <Info className="h-4 w-4 shrink-0" />
+                                <span>Your progress is saved securely in the cloud.</span>
+                             </p>
+                        </CardContent>
+                    </Card>
                   </div>
                 </div>
               </div>
             </section>
         </main>
-        <AlertDialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Important: Data Storage</AlertDialogTitle>
-              <AlertDialogDescription>
-                Welcome to NextGenSDE! Please be aware that your data, including your name, roadmap progress, and an encrypted representation of your passcode, will be stored in a secure cloud database.
-                 <br/><br/>
-                Your passcode is used to secure your account. Don't forget it!
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmPrivacy}>I Understand, Continue</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
     </div>
   );
 }

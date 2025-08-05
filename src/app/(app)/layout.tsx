@@ -11,8 +11,6 @@ import { SplashScreen } from '@/components/splash-screen';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
-
-const USER_DATA_KEY = 'user-profile-data';
 const AUTH_KEY = 'authenticated_v2';
 
 
@@ -29,14 +27,11 @@ export default function AppLayout({
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
             // User is signed in.
-            const isAuthenticated = sessionStorage.getItem(AUTH_KEY);
-            if (isAuthenticated === 'true') {
-                 setIsAuthenticating(false);
-            } else {
-                 router.replace('/');
-            }
+            sessionStorage.setItem(AUTH_KEY, 'true');
+            setIsAuthenticating(false);
         } else {
             // User is signed out.
+            sessionStorage.removeItem(AUTH_KEY);
             router.replace('/');
         }
     });
