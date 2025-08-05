@@ -36,9 +36,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import confetti from 'canvas-confetti';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
 
+const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+const STREAK_STORAGE_KEY = 'user-streak-data';
+const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
 
 const checkPhaseCompletion = (phase: RoadmapPhase) => {
     const allTopicsDone = phase.topics.every(t => t.completed);
@@ -52,58 +53,36 @@ export function RoadmapAccordion() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const saveRoadmapToFirestore = async (newRoadmap: RoadmapPhase[]) => {
-      if (auth.currentUser) {
-          try {
-              const userDocRef = doc(db, 'users', auth.currentUser.uid);
-              await updateDoc(userDocRef, { roadmap: newRoadmap });
-          } catch (error) {
-              console.error("Failed to save roadmap to Firestore:", error);
-              toast({ title: "Sync Error", description: "Could not save your progress to the cloud.", variant: "destructive" });
-          }
+  const saveRoadmapToLocalStorage = (newRoadmap: RoadmapPhase[]) => {
+      try {
+          localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(newRoadmap));
+      } catch (error) {
+          console.error("Failed to save roadmap to localStorage:", error);
+          toast({ title: "Save Error", description: "Could not save your progress.", variant: "destructive" });
       }
   };
 
-  const loadRoadmap = useCallback(async () => {
+  const loadRoadmap = useCallback(() => {
         setIsLoading(true);
-        if (auth.currentUser) {
-            try {
-                const userDocRef = doc(db, 'users', auth.currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists() && userDoc.data().roadmap) {
-                    setRoadmap(userDoc.data().roadmap);
-                } else {
-                    // This case handles a new user who doesn't have a roadmap yet.
-                    // We'll set the default roadmap for them.
-                    await updateDoc(userDocRef, { roadmap: defaultRoadmap });
-                    setRoadmap(defaultRoadmap);
-                }
-            } catch (error) {
-                console.error('Failed to load or set roadmap from Firestore:', error);
-                setRoadmap(defaultRoadmap); // Fallback to default
+        try {
+            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
+            if (savedRoadmap) {
+                setRoadmap(JSON.parse(savedRoadmap));
+            } else {
+                setRoadmap(defaultRoadmap);
+                localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(defaultRoadmap));
             }
-        } else {
-            // Not logged in, no roadmap to show
-            setRoadmap([]);
+        } catch (error) {
+            console.error('Failed to load roadmap from localStorage:', error);
+            setRoadmap(defaultRoadmap);
         }
         setIsLoading(false);
     }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        loadRoadmap();
-      } else {
-        setIsLoading(false);
-        setRoadmap([]);
-      }
-    });
-
-    // This event is triggered by the custom roadmap generator
+    loadRoadmap();
     window.addEventListener('roadmapUpdated', loadRoadmap);
-
     return () => {
-        unsubscribe();
         window.removeEventListener('roadmapUpdated', loadRoadmap);
     }
   }, [loadRoadmap]);
@@ -116,23 +95,23 @@ export function RoadmapAccordion() {
     });
   }
 
-  const updateConsistencyAndStreak = useCallback(async (isProgress: boolean) => {
-    if (!isProgress || !auth.currentUser) return;
+  const updateConsistencyAndStreak = useCallback((isProgress: boolean) => {
+    if (!isProgress) return;
 
     try {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
-        const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) return;
-
-        const userData = userDoc.data();
-        const consistency: string[] = userData.consistency || [];
+        // Consistency
+        const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
+        const consistency: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
         if (!consistency.includes(todayStr)) {
-            await updateDoc(userDocRef, { consistency: arrayUnion(todayStr) });
+            consistency.push(todayStr);
+            localStorage.setItem(CONSISTENCY_STORAGE_KEY, JSON.stringify(consistency));
         }
 
-        const streakData = userData.streak || { count: 0, lastCompletedDate: "" };
+        // Streak
+        const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
+        const streakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
 
         if (streakData.lastCompletedDate === todayStr) return;
 
@@ -148,7 +127,7 @@ export function RoadmapAccordion() {
         }
         
         const newStreakData = { count: newStreakCount, lastCompletedDate: todayStr };
-        await updateDoc(userDocRef, { streak: newStreakData });
+        localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(newStreakData));
 
         toast({
             title: "Progress!",
@@ -180,7 +159,7 @@ export function RoadmapAccordion() {
     });
     
     setRoadmap(newRoadmap);
-    saveRoadmapToFirestore(newRoadmap);
+    saveRoadmapToLocalStorage(newRoadmap);
 
     const newPhaseState = newRoadmap.find(p => p.id === phaseId)!;
     const isPhaseCompletedNow = checkPhaseCompletion(newPhaseState);
@@ -214,7 +193,7 @@ export function RoadmapAccordion() {
     });
 
     setRoadmap(newRoadmap);
-    saveRoadmapToFirestore(newRoadmap);
+    saveRoadmapToLocalStorage(newRoadmap);
 
     if (isProgress) {
         updateConsistencyAndStreak(true);
@@ -234,9 +213,9 @@ export function RoadmapAccordion() {
     window.dispatchEvent(new Event('storage'));
   }
 
-  const handleRestoreDefault = async () => {
+  const handleRestoreDefault = () => {
     setRoadmap(defaultRoadmap);
-    await saveRoadmapToFirestore(defaultRoadmap);
+    saveRoadmapToLocalStorage(defaultRoadmap);
     window.dispatchEvent(new Event('storage'));
     toast({
       title: "Expert Roadmap Restored",
@@ -245,7 +224,7 @@ export function RoadmapAccordion() {
   }
 
 
-  const handleResetProgress = async () => {
+  const handleResetProgress = () => {
     const newRoadmap = roadmap.map(phase => ({
       ...phase,
       problemsSolved: 0,
@@ -256,18 +235,10 @@ export function RoadmapAccordion() {
     }));
     
     setRoadmap(newRoadmap);
-    if (auth.currentUser) {
-        try {
-            const userDocRef = doc(db, 'users', auth.currentUser.uid);
-            await updateDoc(userDocRef, {
-                roadmap: newRoadmap,
-                streak: { count: 0, lastCompletedDate: "" },
-                consistency: []
-            });
-        } catch (error) {
-             console.error("Failed to reset progress in Firestore:", error);
-        }
-    }
+    saveRoadmapToLocalStorage(newRoadmap);
+    localStorage.removeItem(STREAK_STORAGE_KEY);
+    localStorage.removeItem(CONSISTENCY_STORAGE_KEY);
+
     window.dispatchEvent(new Event('storage'));
     toast({
         title: "Progress Reset",
@@ -327,7 +298,7 @@ export function RoadmapAccordion() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently reset your roadmap progress, streak, and consistency data in the cloud.
+                    This action cannot be undone. This will permanently reset your roadmap progress, streak, and consistency data in this browser.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -424,7 +395,7 @@ export function RoadmapAccordion() {
           </Accordion>
            <div className="text-xs text-muted-foreground flex items-center gap-2 pl-12">
                 <Info className="h-4 w-4" />
-                <span>Your progress is saved automatically to the cloud.</span>
+                <span>Your progress is saved automatically to your browser's local storage.</span>
            </div>
         </div>
     </div>

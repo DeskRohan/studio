@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Lightbulb, BookOpen, AlertTriangle } from 'lucide-react';
+import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
 import type { RoadmapPhase } from '@/lib/data';
+import { defaultRoadmap } from '@/lib/data';
 
 const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
@@ -24,9 +25,8 @@ export function Recommendations() {
     const findWeakestTopics = () => {
         try {
             const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-            if (!savedRoadmap) return [];
-
-            const roadmap: RoadmapPhase[] = JSON.parse(savedRoadmap);
+            const roadmap: RoadmapPhase[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap;
+            
             const topicProgress: { [key: string]: { completed: number, total: number } } = {};
 
             const topicKeywords = [
