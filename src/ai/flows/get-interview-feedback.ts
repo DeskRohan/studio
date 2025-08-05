@@ -27,6 +27,7 @@ export async function getInterviewFeedback(input: InterviewFeedbackInput): Promi
 
 const prompt = ai.definePrompt({
   name: 'interviewFeedbackPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: InterviewFeedbackInputSchema },
   output: { schema: InterviewFeedbackOutputSchema },
   prompt: `You are an expert career coach for software engineers. A student is practicing for an interview.

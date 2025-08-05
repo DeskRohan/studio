@@ -27,6 +27,7 @@ export async function askTutor(input: AskTutorInput): Promise<AskTutorOutput> {
 
 const prompt = ai.definePrompt({
   name: 'askTutorPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: AskTutorInputSchema },
   output: { schema: AskTutorOutputSchema },
   prompt: `You are Niva, an expert AI assistant and tutor for Computer Science students. You are embedded in a web application called "NextGenSDE".

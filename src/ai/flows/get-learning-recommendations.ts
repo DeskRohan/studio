@@ -30,6 +30,7 @@ export async function getLearningRecommendations(input: LearningRecommendationsI
 
 const prompt = ai.definePrompt({
   name: 'learningRecommendationsPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: LearningRecommendationsInputSchema },
   output: { schema: LearningRecommendationsOutputSchema },
   prompt: `You are an expert career coach for software engineers. A student needs help focusing their studies.

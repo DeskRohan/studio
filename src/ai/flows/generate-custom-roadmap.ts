@@ -45,6 +45,7 @@ export async function generateCustomRoadmap(input: CustomRoadmapInput): Promise<
 
 const prompt = ai.definePrompt({
   name: 'customRoadmapPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: CustomRoadmapInputSchema },
   output: { schema: CustomRoadmapOutputSchema },
   prompt: `You are an expert computer science curriculum designer and career coach. Your task is to create a detailed, phase-by-phase learning roadmap for a student focused on **Placement Preparation**.
