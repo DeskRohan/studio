@@ -12,6 +12,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+if (!firebaseConfig.apiKey) {
+    throw new Error('Firebase API Key is missing. Please check your .env file and ensure NEXT_PUBLIC_FIREBASE_API_KEY is set.');
+}
+
 // Initialize Firebase
 let app;
 if (!getApps().length) {
@@ -25,7 +29,9 @@ const auth = getAuth(app);
 
 // Enable offline persistence
 if (typeof window !== 'undefined') {
-    enableIndexedDbPersistence(db).catch((err) => {
+    try {
+        enableIndexedDbPersistence(db);
+    } catch (err: any) {
       if (err.code === 'failed-precondition') {
         console.warn(
           'Firestore persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.'
@@ -35,7 +41,7 @@ if (typeof window !== 'undefined') {
           'Firestore persistence failed: The current browser does not support all of the features required to enable persistence.'
         );
       }
-    });
+    }
 }
 
 
