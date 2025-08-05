@@ -21,8 +21,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
+import { auth, db } from '@/lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export function CustomRoadmapGenerator() {
     const [timeline, setTimeline] = useState('');
@@ -30,6 +30,7 @@ export function CustomRoadmapGenerator() {
     const [generatedRoadmap, setGeneratedRoadmap] = useState<RoadmapPhase[] | null>(null);
     const [error, setError] = useState('');
     const { toast } = useToast();
+    const user = auth.currentUser;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,16 +58,21 @@ export function CustomRoadmapGenerator() {
         }
     };
 
-    const applyRoadmap = () => {
-        if (!generatedRoadmap) return;
-        localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(generatedRoadmap));
-        setGeneratedRoadmap(null);
-        toast({
-            title: 'Roadmap Updated!',
-            description: 'Your new personalized roadmap has been applied.',
-        });
-        // Dispatch event to notify other components (like the accordion)
-        window.dispatchEvent(new Event('roadmapUpdated'));
+    const applyRoadmap = async () => {
+        if (!generatedRoadmap || !user) return;
+
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, { roadmap: generatedRoadmap });
+            setGeneratedRoadmap(null);
+            toast({
+                title: 'Roadmap Updated!',
+                description: 'Your new personalized roadmap has been applied.',
+            });
+            window.dispatchEvent(new Event('roadmapUpdated'));
+        } catch (e) {
+            toast({ title: "Error", description: "Failed to apply the new roadmap.", variant: "destructive" });
+        }
     };
 
     return (

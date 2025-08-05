@@ -1,190 +1,113 @@
 
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import dynamic from 'next/dynamic';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, Target, Flame, Quote, Award } from "lucide-react";
-import { motivationalQuotes } from "@/lib/quotes";
-import { ConsistencyCalendar } from "@/components/dashboard/consistency-calendar";
-import { getGreeting } from "@/lib/greetings";
-import type { RoadmapPhase } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, GraduationCap } from 'lucide-react';
+import { auth, db, googleProvider } from '@/lib/firebase';
+import { signInWithPopup, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { defaultRoadmap } from '@/lib/data';
 
-const OverviewChart = dynamic(() => import('@/components/dashboard/overview-chart').then(mod => mod.OverviewChart), {
-  ssr: false,
-  loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
-});
+const GoogleIcon = () => (
+    <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" />
+        <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+        <path fill="#1976D2" d="M43.611 20.083H24v8h11.303c-.792 2.237-2.231 4.16-4.082 5.571l6.19 5.238C42.021 35.596 44 30.138 44 24c0-1.341-.138-2.65-.389-3.917z" />
+    </svg>
+);
 
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
-const STREAK_STORAGE_KEY = 'user-streak-data';
-const CONSISTENCY_STORAGE_KEY = 'user-consistency-data';
-const NAME_STORAGE_KEY = 'user-name';
+export default function WelcomePage() {
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(true);
 
-
-type StreakData = {
-    count: number;
-    lastCompletedDate: string;
-}
-
-const getStreakBadge = (streak: number): { name: string; icon: string; level: number } => {
-  if (streak >= 30) return { name: "Samrat (Emperor)", icon: "👑", level: 4 };
-  if (streak >= 15) return { name: "Yodha (Warrior)", icon: "⚔️", level: 3 };
-  if (streak >= 7) return { name: "Sainik (Soldier)", icon: "🛡️", level: 2 };
-  if (streak >= 1) return { name: "Prarambhik (Beginner)", icon: "🌱", level: 1 };
-  return { name: "No Streak", icon: "✖️", level: 0 };
-};
-
-export default function DashboardPage() {
-  const [completedCount, setCompletedCount] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [consistency, setConsistency] = useState<string[]>([]);
-  const [quote, setQuote] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [greeting, setGreeting] = useState('');
-
-  const fetchDashboardData = useCallback(() => {
-    setIsLoading(true);
-
-    try {
-        const name = localStorage.getItem(NAME_STORAGE_KEY) || 'Student';
-        setGreeting(getGreeting(name));
-
-        const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-        const roadmapItems: RoadmapPhase[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap;
-        
-        let totalTopics = 0;
-        let completedTopics = 0;
-        roadmapItems.forEach(phase => {
-            totalTopics += phase.topics.length;
-            completedTopics += phase.topics.filter(topic => topic.completed).length;
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                router.push('/dashboard');
+            } else {
+                setIsLoading(false);
+            }
         });
-        setCompletedCount(completedTopics);
-        setTotalCount(totalTopics);
+        return () => unsubscribe();
+    }, [router]);
 
-        const savedStreak = localStorage.getItem(STREAK_STORAGE_KEY);
-        const streakData: StreakData = savedStreak ? JSON.parse(savedStreak) : { count: 0, lastCompletedDate: "" };
-        setStreak(streakData.count);
+    const handleGoogleSignIn = async () => {
+        setIsLoading(true);
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
 
-        const savedConsistency = localStorage.getItem(CONSISTENCY_STORAGE_KEY);
-        const consistencyData: string[] = savedConsistency ? JSON.parse(savedConsistency) : [];
-        setConsistency(consistencyData);
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
 
-    } catch (error) {
-        console.error("Failed to fetch dashboard data from localStorage:", error);
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const quoteIndex = new Date().getDate() % motivationalQuotes.length;
-    setQuote(motivationalQuotes[quoteIndex]);
-    
-    fetchDashboardData();
-
-    // Listen for storage changes from other components (like study plan)
-    const handleStorageChange = () => {
-        fetchDashboardData();
+            if (!userDoc.exists()) {
+                // New user, create a document
+                await setDoc(userDocRef, {
+                    uid: user.uid,
+                    name: user.displayName || 'Student',
+                    email: user.email,
+                    createdAt: serverTimestamp(),
+                    roadmap: defaultRoadmap,
+                    streak: { count: 0, lastCompletedDate: "" },
+                    consistency: [],
+                });
+                toast({
+                    title: "Welcome to NextGenSDE!",
+                    description: "Your account and personalized roadmap have been created.",
+                });
+            } else {
+                 toast({
+                    title: `Welcome back, ${user.displayName}!`,
+                    description: "You've successfully signed in.",
+                });
+            }
+            router.push('/dashboard');
+        } catch (error: any) {
+            console.error("Google Sign-In Error:", error);
+            toast({
+                title: 'Sign-In Failed',
+                description: 'Could not sign in with Google. Please try again.',
+                variant: 'destructive',
+            });
+            setIsLoading(false);
+        }
     };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('roadmapUpdated', handleStorageChange); // Also for custom roadmap
 
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('roadmapUpdated', handleStorageChange);
-    };
-  }, [fetchDashboardData]);
-
-  const remainingCount = totalCount - completedCount;
-  const streakBadge = getStreakBadge(streak);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">{greeting || <Skeleton className="h-9 w-64" />}</h1>
-        <p className="text-muted-foreground">An overview of your progress and motivation.</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {isLoading ? (
-                    <>
-                        <Skeleton className="h-28" />
-                        <Skeleton className="h-28" />
-                        <Skeleton className="h-28" />
-                        <Skeleton className="h-28" />
-                    </>
-                ) : (
-                    <>
-                        <Card className="card-glow-effect">
-                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Topics Completed</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold">{completedCount}</div>
-                            <p className="text-xs text-muted-foreground">out of {totalCount} total topics</p>
-                          </CardContent>
-                        </Card>
-                        <Card className="card-glow-effect">
-                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Topics Remaining</CardTitle>
-                            <Target className="h-4 w-4 text-muted-foreground" />
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold">{remainingCount}</div>
-                            <p className="text-xs text-muted-foreground">Keep going!</p>
-                          </CardContent>
-                        </Card>
-                        <Card className="card-glow-effect">
-                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
-                            <Flame className="h-4 w-4 text-primary" />
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold">{streak}</div>
-                            <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
-                          </CardContent>
-                        </Card>
-                         <Card className="card-glow-effect">
-                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Streak Badge</CardTitle>
-                            <Award className="h-4 w-4 text-muted-foreground" />
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold flex items-center gap-2">
-                                <span>{streakBadge.icon}</span>
-                                <span>{streakBadge.name}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{streak > 0 ? `Level ${streakBadge.level} Achievement` : "Start a streak to earn a badge!"}</p>
-                          </CardContent>
-                        </Card>
-                    </>
-                )}
+    if (isLoading) {
+        return (
+            <div className="flex h-screen w-full flex-col items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
-            <OverviewChart completed={completedCount} remaining={remainingCount} />
-        </div>
+        );
+    }
 
-        {/* Right Column */}
-        <div className="lg:col-span-1 space-y-6">
-            <ConsistencyCalendar consistency={consistency} />
-            <Card className="card-glow-effect">
-              <CardHeader>
-                <CardTitle>Daily Quote</CardTitle>
-                 <CardDescription>A little motivation for your day.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center gap-4 pt-6">
-                 <Quote className="h-8 w-8 text-muted-foreground flex-shrink-0" />
-                 <blockquote className="text-sm italic border-l-4 border-primary pl-4">"{quote}"</blockquote>
-              </CardContent>
-            </Card>
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center p-4 text-center">
+            <GraduationCap className="h-20 w-20 text-primary mb-4" />
+            <h1 className="text-4xl font-bold font-headline">Welcome to NextGenSDE</h1>
+            <p className="mt-2 max-w-xl text-muted-foreground">
+                Your personalized AI-powered guide to ace your placement preparation. Track your progress, get smart recommendations, and land your dream job.
+            </p>
+            <Button
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="mt-8"
+                size="lg"
+            >
+                {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                ) : (
+                   <>
+                    <GoogleIcon />
+                    Sign in with Google
+                   </>
+                )}
+            </Button>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

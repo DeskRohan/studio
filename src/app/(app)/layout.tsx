@@ -1,23 +1,35 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { SplashScreen } from '@/components/splash-screen';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isAuthenticating, setIsAuthenticating] = useState(false); // No longer authenticating, but keeping for structure
+  const router = useRouter();
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
 
-  // The authentication logic that was causing the error has been removed.
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticating(false);
+      } else {
+        router.push('/');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   if (isAuthenticating) {
     return <SplashScreen />;
   }
-
-  // The main UI components like Header and Footer are now rendered by the root layout.
-  // This layout is now just a pass-through for its children.
+  
   return <>{children}</>;
 }

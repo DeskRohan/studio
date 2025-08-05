@@ -5,12 +5,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
+import { Sparkles, Lightbulb, AlertTriangle, Loader2 } from 'lucide-react';
 import { getLearningRecommendations } from '@/ai/flows/get-learning-recommendations';
 import type { RoadmapPhase } from '@/lib/data';
-import { defaultRoadmap } from '@/lib/data';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-const ROADMAP_STORAGE_KEY = 'dsa-roadmap-data-v2';
 
 type Recommendation = {
     topic: string;
@@ -21,11 +21,17 @@ export function Recommendations() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const user = auth.currentUser;
 
-    const findWeakestTopics = () => {
+    const findWeakestTopics = async () => {
+        if (!user) return [];
         try {
-            const savedRoadmap = localStorage.getItem(ROADMAP_STORAGE_KEY);
-            const roadmap: RoadmapPhase[] = savedRoadmap ? JSON.parse(savedRoadmap) : defaultRoadmap;
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (!userDoc.exists() || !userDoc.data().roadmap) {
+                return [];
+            }
+            const roadmap: RoadmapPhase[] = userDoc.data().roadmap;
             
             const topicProgress: { [key: string]: { completed: number, total: number } } = {};
 
@@ -34,12 +40,10 @@ export function Recommendations() {
                 'Sliding Window', 'Trees', 'BST', 'Graphs', 'Heap', 'Trie', 'DP', 'Dynamic Programming'
             ];
 
-            // Initialize progress for all topics
             topicKeywords.forEach(keyword => {
                 topicProgress[keyword] = { completed: 0, total: 0 };
             });
             
-            // Aggregate progress
             roadmap.forEach(phase => {
                 phase.topics.forEach(topic => {
                     const matchedKeyword = topicKeywords.find(keyword => topic.text.toLowerCase().includes(keyword.toLowerCase()));
@@ -52,7 +56,6 @@ export function Recommendations() {
                 });
             });
 
-            // Calculate completion percentage and find weakest
             const percentages = Object.entries(topicProgress)
                 .filter(([, data]) => data.total > 0)
                 .map(([topic, data]) => ({
@@ -71,15 +74,16 @@ export function Recommendations() {
     };
     
     const fetchRecommendations = async () => {
-        const weakestTopics = findWeakestTopics();
-        if (weakestTopics.length === 0) {
-            setError("Could not determine weakest topics. Complete some roadmap items first!");
-            return;
-        }
-
         setIsLoading(true);
         setError('');
         setRecommendations([]);
+        
+        const weakestTopics = await findWeakestTopics();
+        if (weakestTopics.length === 0) {
+            setError("Could not determine weakest topics. Complete some roadmap items first!");
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const response = await getLearningRecommendations({ topics: weakestTopics });
@@ -107,6 +111,7 @@ export function Recommendations() {
                             </CardDescription>
                         </div>
                         <Button onClick={fetchRecommendations} disabled={isLoading} className="mt-2 md:mt-0 md:flex-shrink-0">
+                             {isLoading ? <Loader2 className="animate-spin" /> : <Sparkles className="mr-2" />}
                              {isLoading ? 'Analyzing...' : 'Get Suggestions'}
                         </Button>
                     </div>

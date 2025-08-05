@@ -18,8 +18,6 @@ const OverviewChart = dynamic(() => import('@/components/dashboard/overview-char
   loading: () => <Skeleton className="h-full min-h-[400px] w-full" />,
 });
 
-const USER_DATA_KEY = 'user-profile-data';
-
 type StreakData = {
     count: number;
     lastCompletedDate: string;
@@ -56,10 +54,8 @@ export default function DashboardPage() {
         if (userDoc.exists()) {
             const data = userDoc.data();
             
-            // Set Greeting
             setGreeting(getGreeting(data.name || 'Student'));
 
-            // Process Roadmap
             const roadmapItems: RoadmapPhase[] = data.roadmap || [];
             let totalTopics = 0;
             let completedTopics = 0;
@@ -70,11 +66,9 @@ export default function DashboardPage() {
             setCompletedCount(completedTopics);
             setTotalCount(totalTopics);
 
-            // Process Streak
             const streakData: StreakData = data.streak || { count: 0, lastCompletedDate: "" };
             setStreak(streakData.count);
 
-            // Process Consistency
             const consistencyData: string[] = data.consistency || [];
             setConsistency(consistencyData);
         }
@@ -86,7 +80,6 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Quote of the day
     const quoteIndex = new Date().getDate() % motivationalQuotes.length;
     setQuote(motivationalQuotes[quoteIndex]);
     
@@ -98,15 +91,14 @@ export default function DashboardPage() {
       }
     });
 
-    // Listen for storage changes from other components (like study plan)
-    const handleStorageChange = () => {
+    const handleDataUpdated = () => {
         fetchDashboardData();
     };
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userDataUpdated', handleDataUpdated);
 
     return () => {
         unsubscribe();
-        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('userDataUpdated', handleDataUpdated);
     };
   }, [fetchDashboardData]);
 
@@ -121,7 +113,6 @@ export default function DashboardPage() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {isLoading ? (
@@ -182,7 +173,6 @@ export default function DashboardPage() {
             <OverviewChart completed={completedCount} remaining={remainingCount} />
         </div>
 
-        {/* Right Column */}
         <div className="lg:col-span-1 space-y-6">
             <ConsistencyCalendar consistency={consistency} />
             <Card className="card-glow-effect">

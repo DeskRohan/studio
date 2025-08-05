@@ -3,11 +3,11 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can only read and write their own documents.
-    // The user's UID from Firebase Auth must match the document ID.
+    // Users can only read and write their own document.
+    // The document's ID must be the same as the user's UID from authentication.
     match /users/{userId} {
       allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // Allow a user to create their own user document.
       allow create: if request.auth != null;
     }
   }
