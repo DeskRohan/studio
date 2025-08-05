@@ -8,38 +8,16 @@ import { Footer } from '@/components/footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { NivaFab } from '@/components/niva-fab';
 import { SplashScreen } from '@/components/splash-screen';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-
-const AUTH_KEY = 'authenticated_v2';
-
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const isMobile = useIsMobile();
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(false); // No longer authenticating, but keeping for structure
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // User is signed in.
-            sessionStorage.setItem(AUTH_KEY, 'true');
-            setIsAuthenticating(false);
-        } else {
-            // User is signed out.
-            sessionStorage.removeItem(AUTH_KEY);
-            router.replace('/');
-        }
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [router]);
-
+  // The authentication logic that was causing the error has been removed.
 
   if (isAuthenticating) {
     return <SplashScreen />;
